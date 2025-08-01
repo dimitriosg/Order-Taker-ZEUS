@@ -198,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Logout route
-  app.get('/api/logout', async (req: any, res) => {
+  app.post('/api/logout', async (req: any, res) => {
     try {
       // Clear any session data if using sessions
       if (req.session) {
@@ -212,9 +212,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clear cookies
       res.clearCookie('connect.sid');
       res.clearCookie('session');
+      res.clearCookie('replit_auth');
       
-      // Redirect to landing page with logout flag
-      res.redirect('/?logout=true');
+      // Return success response instead of redirect
+      res.json({ success: true, message: "Logged out successfully" });
     } catch (error) {
       console.error("Logout error:", error);
       res.status(500).json({ message: "Logout failed" });

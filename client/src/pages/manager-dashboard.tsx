@@ -65,8 +65,21 @@ interface TableData {
 export default function ManagerDashboard() {
   const { user } = useAuth() as { user: Staff | undefined };
   
-  const logout = () => {
-    window.location.href = "/api/logout";
+  const logout = async () => {
+    try {
+      await apiRequest("POST", "/api/logout");
+      // Clear all cached data
+      queryClient.clear();
+      // Redirect to landing page
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Logout failed",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
   };
   const queryClient = useQueryClient();
   const { toast } = useToast();

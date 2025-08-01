@@ -39,8 +39,21 @@ interface Order {
 export default function WaiterDashboard() {
   const { user } = useAuth() as { user: any };
   
-  const logout = () => {
-    window.location.href = "/api/logout";
+  const logout = async () => {
+    try {
+      await apiRequest("POST", "/api/logout");
+      // Clear all cached data
+      queryClient.clear();
+      // Redirect to landing page
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Logout failed",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
   };
   const socket = useSocket();
   const queryClient = useQueryClient();
