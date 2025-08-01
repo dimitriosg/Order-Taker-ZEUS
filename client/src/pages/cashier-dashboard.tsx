@@ -195,14 +195,14 @@ export default function CashierDashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <ScanBarcode className="text-emerald-600 text-xl mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Cashier Dashboard</h1>
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Cashier Dashboard</h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="flex items-center space-x-2 bg-green-100 px-3 py-1 rounded-full">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm text-green-700">Live</span>
               </div>
-              <span className="text-sm text-gray-600">
+              <span className="hidden sm:block text-sm text-gray-600">
                 {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Cashier'}
               </span>
               <Button variant="ghost" onClick={() => setShowTillModal(true)} size="sm">
@@ -223,7 +223,7 @@ export default function CashierDashboard() {
         <PasswordChangeReminder onChangePassword={() => setShowProfileModal(true)} />
         
         {/* Till and Order Summary - First Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -332,7 +332,7 @@ export default function CashierDashboard() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* New Orders */}
           <Card>
             <div className="p-6 border-b border-gray-200">
@@ -348,7 +348,7 @@ export default function CashierDashboard() {
               ) : (
                 sortedNewOrders.map((order) => (
                   <Card key={order.id} className="border border-gray-200 order-card-enter">
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <h3 className="font-semibold text-gray-900">Table {order.tableNumber}</h3>
@@ -434,7 +434,7 @@ export default function CashierDashboard() {
               ) : (
                 sortedInPrepOrders.map((order) => (
                   <Card key={order.id} className="border border-gray-200 order-card-enter order-card-in-prep">
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <h3 className="font-semibold text-gray-900">Table {order.tableNumber}</h3>
@@ -520,7 +520,7 @@ export default function CashierDashboard() {
               ) : (
                 sortedReadyOrders.map((order) => (
                   <Card key={order.id} className="border border-gray-200 bg-green-50 order-card-enter order-card-ready">
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <h3 className="font-semibold text-gray-900">Table {order.tableNumber}</h3>

@@ -106,6 +106,7 @@ export default function ManagerDashboard() {
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(10000); // 10 seconds default
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Fetch staff
   const { data: staff = [], isLoading: staffLoading } = useQuery<Staff[]>({
@@ -418,11 +419,19 @@ export default function ManagerDashboard() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="lg:hidden mr-2"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
               <BarChart3 className="text-emerald-600 text-xl mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Admin Dashboard</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <span className="hidden sm:block text-sm text-gray-600">
                 {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email || 'Manager'}
               </span>
               <Button 
@@ -440,6 +449,102 @@ export default function ManagerDashboard() {
           </div>
         </div>
       </header>
+
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden bg-white border-b border-gray-200 shadow-sm">
+          <div className="px-4 py-2 space-y-1">
+            <Button
+              variant={activeView === "overview" ? "default" : "ghost"}
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                setActiveView("overview");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <BarChart3 className="mr-3 h-4 w-4" />
+              Overview
+            </Button>
+            <Button
+              variant={activeView === "reports" ? "default" : "ghost"}
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                setActiveView("reports");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Download className="mr-3 h-4 w-4" />
+              Reports
+            </Button>
+            <Button
+              variant={activeView === "monitor" ? "default" : "ghost"}
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                setActiveView("monitor");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Clock className="mr-3 h-4 w-4" />
+              Table Monitor
+            </Button>
+            <Button
+              variant={activeView === "staff" ? "default" : "ghost"}
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                setActiveView("staff");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Users className="mr-3 h-4 w-4" />
+              Staff Management
+            </Button>
+            <Button
+              variant={activeView === "tables" ? "default" : "ghost"}
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                setActiveView("tables");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Table className="mr-3 h-4 w-4" />
+              Table Assignment
+            </Button>
+            <Button
+              variant={activeView === "profile" ? "default" : "ghost"}
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                setActiveView("profile");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <User className="mr-3 h-4 w-4" />
+              Edit Profile
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                window.location.href = "/menu-management";
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Menu className="mr-3 h-4 w-4" />
+              Menu Management
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                setShowImpersonateModal(true);
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Settings className="mr-3 h-4 w-4" />
+              Impersonate
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-1">
         {/* Sidebar */}

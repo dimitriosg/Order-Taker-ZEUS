@@ -24,6 +24,14 @@ Preferred communication style: Simple, everyday language.
 - **Smart Layout**: Icons remain visible in collapsed state with tooltips for accessibility
 - **Responsive Design**: Maintains full functionality in both expanded and collapsed states
 
+### Mobile-First Responsive Design (January 2025)
+- **All Dashboards**: Comprehensive mobile optimization for phones and tablets
+- **Mobile Navigation**: Collapsible mobile menus for manager and waiter dashboards
+- **Touch-Friendly**: Optimized button sizes and spacing for touch interactions
+- **Responsive Grids**: Adaptive layouts for tables, cards, and order displays
+- **Header Optimization**: Responsive headers with hidden labels on small screens
+- **Waiter Focus**: Special attention to mobile-first design for field workers
+
 ## System Architecture
 
 ### Frontend Architecture

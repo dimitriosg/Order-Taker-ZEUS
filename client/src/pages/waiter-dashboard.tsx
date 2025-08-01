@@ -68,6 +68,7 @@ export default function WaiterDashboard() {
   const [activeView, setActiveView] = useState("tables");
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
   const [editingTableName, setEditingTableName] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Fetch tables
   const { data: tables = [], isLoading: tablesLoading } = useQuery<Table[]>({
@@ -280,11 +281,19 @@ export default function WaiterDashboard() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="lg:hidden mr-2"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
               <Utensils className="text-emerald-600 text-xl mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Waiter Dashboard</h1>
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Waiter Dashboard</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <span className="hidden sm:block text-sm text-gray-600">
                 {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Waiter'}
               </span>
               <Button variant="ghost" onClick={() => setShowProfileModal(true)} size="sm">
@@ -297,6 +306,47 @@ export default function WaiterDashboard() {
           </div>
         </div>
       </header>
+
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden bg-white border-b border-gray-200 shadow-sm">
+          <div className="px-4 py-2 space-y-1">
+            <Button
+              variant={activeView === "tables" ? "default" : "ghost"}
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                setActiveView("tables");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Utensils className="mr-3 h-4 w-4" />
+              Tables
+            </Button>
+            <Button
+              variant={activeView === "orders" ? "default" : "ghost"}
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                setActiveView("orders");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Receipt className="mr-3 h-4 w-4" />
+              My Orders
+            </Button>
+            <Button
+              variant={activeView === "status" ? "default" : "ghost"}
+              className="w-full justify-start text-sm"
+              onClick={() => {
+                setActiveView("status");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Clock className="mr-3 h-4 w-4" />
+              Order Status
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-1">
         {/* Sidebar */}
@@ -346,7 +396,7 @@ export default function WaiterDashboard() {
                 </Button>
               </div>
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
                 {filteredTables.map((table) => {
                   const { status, color } = getTableStatus(table.number);
                   return (
@@ -358,17 +408,17 @@ export default function WaiterDashboard() {
                       }`}
                       onClick={() => handleTableSelect(table.number)}
                     >
-                      <CardContent className="p-6 text-center">
-                        <div className={`w-12 h-12 ${
+                      <CardContent className="p-3 sm:p-6 text-center">
+                        <div className={`w-8 h-8 sm:w-12 sm:h-12 ${
                           color === "green" ? "bg-green-100" :
                           color === "amber" ? "bg-amber-100" : "bg-red-100"
-                        } rounded-full flex items-center justify-center mx-auto mb-3`}>
+                        } rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3`}>
                           {status === "ready" ? (
-                            <Utensils className={`text-red-600 h-5 w-5`} />
+                            <Utensils className={`text-red-600 h-3 w-3 sm:h-5 sm:w-5`} />
                           ) : status === "occupied" ? (
-                            <Clock className={`text-amber-600 h-5 w-5`} />
+                            <Clock className={`text-amber-600 h-3 w-3 sm:h-5 sm:w-5`} />
                           ) : (
-                            <Check className={`text-green-600 h-5 w-5`} />
+                            <Check className={`text-green-600 h-3 w-3 sm:h-5 sm:w-5`} />
                           )}
                         </div>
                         {editingTableId === table.id ? (
@@ -403,7 +453,7 @@ export default function WaiterDashboard() {
                           </div>
                         ) : (
                           <div className="flex items-center justify-center space-x-1">
-                            <h3 className="font-semibold text-gray-900 text-center">
+                            <h3 className="font-semibold text-gray-900 text-center text-xs sm:text-sm">
                               {getTableDisplayName(table)}
                             </h3>
                             <Button
