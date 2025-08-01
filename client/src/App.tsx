@@ -1,10 +1,11 @@
-import { Switch, Route, Redirect } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SocketProvider } from "@/contexts/SocketContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 import { Landing } from "@/pages/landing";
 import WaiterDashboard from "@/pages/waiter-dashboard";
@@ -14,6 +15,17 @@ import NotFound from "@/pages/not-found";
 
 function Router() {
   const { isAuthenticated, isLoading, user, error } = useAuth();
+  const [location, setLocation] = useLocation();
+
+  // Auto-redirect when role changes (for impersonation)
+  useEffect(() => {
+    if (user?.role && isAuthenticated) {
+      const expectedPath = `/${user.role}`;
+      if (location !== expectedPath) {
+        setLocation(expectedPath);
+      }
+    }
+  }, [user?.role, isAuthenticated, location, setLocation]);
 
   if (isLoading) {
     return (
