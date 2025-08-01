@@ -29,7 +29,7 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserTables(userId: string, assignedTables: number[]): Promise<User>;
   getAllUsers(): Promise<User[]>;
-  updateStaff(id: string, updates: { name?: string; role?: string }): Promise<User>;
+  updateStaff(id: string, updates: { name?: string; role?: string; password?: string }): Promise<User>;
   deleteStaff(id: string): Promise<void>;
 
   // Tables
@@ -151,10 +151,17 @@ export class DatabaseStorage implements IStorage {
     return table;
   }
 
-  async updateStaff(id: string, data: { name?: string; role?: string }): Promise<User> {
+  async updateStaff(id: string, data: { name?: string; role?: string; password?: string }): Promise<User> {
+    const bcrypt = require('bcryptjs');
     const updateData: any = { updatedAt: new Date() };
+    
     if (data.name !== undefined) updateData.firstName = data.name.trim() || null;
     if (data.role !== undefined) updateData.role = data.role;
+    if (data.password !== undefined) {
+      // Hash the password before storing
+      const saltRounds = 10;
+      updateData.passwordHash = await bcrypt.hash(data.password, saltRounds);
+    }
 
     const [user] = await db
       .update(users)

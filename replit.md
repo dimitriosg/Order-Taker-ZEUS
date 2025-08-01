@@ -8,6 +8,15 @@ This is a full-stack restaurant order management system built with React, Expres
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### Password Change Feature Implementation (January 2025)
+- **Backend Updates**: Added password hashing support to staff update endpoint with bcryptjs
+- **Frontend Components**: Enhanced ProfileModal and ProfileEditForm with password validation
+- **Security Reminders**: Added PasswordChangeReminder component across all dashboard roles
+- **User Experience**: All users (manager, waiter, cashier) can now easily change their default passwords
+- **Validation**: Frontend and backend validation ensures passwords are at least 6 characters
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -61,6 +70,8 @@ Preferred communication style: Simple, everyday language.
 - **User Profile Editing**: All users can update display names and passwords
 - **Display Name Format**: Headers show "Name / @username" when name is set, "@username" otherwise
 - **Secure Updates**: Password changes are properly hashed and JWT tokens refreshed
+- **Password Change Reminders**: Security banner encourages users to change default passwords
+- **Accessible Profile Access**: All dashboard roles have profile buttons (header or sidebar) to access password change functionality
 
 ## External Dependencies
 

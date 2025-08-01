@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { showOrderStatusNotification, showNewOrderNotification } from "@/lib/orderNotifications";
 import { ProfileModal } from "@/components/ProfileModal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { PasswordChangeReminder } from "@/components/PasswordChangeReminder";
 import { OrderStatusBadge, OrderStatusProgress } from "@/components/OrderStatusBadge";
 
 interface Order {
@@ -219,6 +220,8 @@ export default function CashierDashboard() {
       </header>
 
       <div className="p-4 lg:p-6">
+        <PasswordChangeReminder onChangePassword={() => setShowProfileModal(true)} />
+        
         {/* Till and Order Summary - First Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="p-4">

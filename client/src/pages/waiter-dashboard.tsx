@@ -9,6 +9,7 @@ import { Utensils, Receipt, Menu, LogOut, Check, Clock, Plus, User, Edit } from 
 import { NewOrderModal } from "@/components/NewOrderModal";
 import { ProfileModal } from "@/components/ProfileModal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { PasswordChangeReminder } from "@/components/PasswordChangeReminder";
 import { OrderStatusBadge, OrderStatusProgress } from "@/components/OrderStatusBadge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -330,6 +331,8 @@ export default function WaiterDashboard() {
 
         {/* Main Content */}
         <main className="flex-1 p-4 lg:p-6">
+          <PasswordChangeReminder onChangePassword={() => setShowProfileModal(true)} />
+          
           {activeView === "tables" && (
             <div>
               <div className="flex justify-between items-center mb-6">

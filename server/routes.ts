@@ -479,9 +479,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/staff/:id', async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, role } = req.body;
+      const { name, role, password } = req.body;
       
-      const staff = await storage.updateStaff(id, { name, role });
+      // Validate password length if provided
+      if (password && password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+      }
+      
+      const staff = await storage.updateStaff(id, { name, role, password });
       res.json(staff);
     } catch (error) {
       console.error("Error updating staff:", error);

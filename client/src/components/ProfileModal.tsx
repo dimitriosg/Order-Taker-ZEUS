@@ -67,6 +67,15 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
       return;
     }
 
+    if (password && password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const updateData: { name?: string; password?: string } = {};
     
     if (name !== user?.firstName) {
@@ -112,6 +121,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Leave blank to keep current password"
             />
+            <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
           </div>
           
           {password && (

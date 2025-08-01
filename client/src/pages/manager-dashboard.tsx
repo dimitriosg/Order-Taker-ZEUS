@@ -14,6 +14,7 @@ import { ProfileModal } from "@/components/ProfileModal";
 import { ImpersonateModal } from "@/components/ImpersonateModal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
+import { PasswordChangeReminder } from "@/components/PasswordChangeReminder";
 import { EditUserModal } from "@/components/EditUserModal";
 import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -513,6 +514,8 @@ export default function ManagerDashboard() {
 
         {/* Main Content */}
         <main className="flex-1 p-4 lg:p-6">
+          <PasswordChangeReminder onChangePassword={() => setActiveView("profile")} />
+          
           {activeView === "overview" && (
             <div>
               <div className="flex justify-between items-center mb-6">
