@@ -5,7 +5,7 @@ import { useSocket } from "@/contexts/SocketContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScanBarcode, Clock, Check, Receipt, LogOut, Bell, User } from "lucide-react";
+import { ScanBarcode, Clock, Check, Receipt, LogOut, Bell, User, DollarSign, ShoppingCart } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileModal } from "@/components/ProfileModal";
@@ -24,6 +24,12 @@ interface Order {
     menuItemId: string;
     quantity: number;
     notes?: string;
+    menuItem?: {
+      id: string;
+      name: string;
+      price: number;
+      category: string;
+    };
   }>;
 }
 
@@ -50,6 +56,15 @@ export default function CashierDashboard() {
   const { data: readyOrders = [] } = useQuery<Order[]>({
     queryKey: ["/api/orders/status/ready"],
   });
+
+  // Calculate total cash received today
+  const allOrders = [...newOrders, ...inPrepOrders, ...readyOrders];
+  const totalCashReceived = allOrders.reduce((total, order) => total + (order.cashReceived || 0), 0);
+  const totalOrderValue = allOrders.reduce((total, order) => 
+    total + (order.items || []).reduce((orderTotal, item) => 
+      orderTotal + ((item.menuItem?.price || 0) * item.quantity), 0
+    ), 0
+  );
 
   // Update order status mutation
   const updateStatusMutation = useMutation({
@@ -181,6 +196,45 @@ export default function CashierDashboard() {
         </div>
 
         {/* Order Columns */}
+        {/* Cash Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Cash Received</p>
+                <p className="text-2xl font-bold text-green-600">${totalCashReceived.toFixed(2)}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Order Value</p>
+                <p className="text-2xl font-bold text-blue-600">${totalOrderValue.toFixed(2)}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Receipt className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Active Orders</p>
+                <p className="text-2xl font-bold text-amber-600">{allOrders.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                <ShoppingCart className="w-6 h-6 text-amber-600" />
+              </div>
+            </div>
+          </Card>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* New Orders */}
           <Card>
@@ -216,10 +270,26 @@ export default function CashierDashboard() {
                       
                       <div className="space-y-1 mb-4">
                         {(order.items || []).map((item, index) => (
-                          <p key={index} className="text-sm text-gray-700">
-                            {item.quantity}x Item #{item.menuItemId.slice(-6)}
-                          </p>
+                          <div key={index} className="flex justify-between text-sm text-gray-700">
+                            <span>{item.quantity}x {item.menuItem?.name || `Item #${item.menuItemId.slice(-6)}`}</span>
+                            <span className="font-medium">${(item.menuItem?.price * item.quantity || 0).toFixed(2)}</span>
+                          </div>
                         ))}
+                      </div>
+                      
+                      <div className="border-t pt-2 mb-4">
+                        <div className="flex justify-between text-sm font-semibold">
+                          <span>Total:</span>
+                          <span className="text-green-600">
+                            ${(order.items || []).reduce((total, item) => 
+                              total + ((item.menuItem?.price || 0) * item.quantity), 0
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-600 mt-1">
+                          <span>Cash Received:</span>
+                          <span>${order.cashReceived?.toFixed(2) || '0.00'}</span>
+                        </div>
                       </div>
                       
                       {/* Order Progress */}
@@ -279,10 +349,26 @@ export default function CashierDashboard() {
                       
                       <div className="space-y-1 mb-4">
                         {(order.items || []).map((item, index) => (
-                          <p key={index} className="text-sm text-gray-700">
-                            {item.quantity}x Item #{item.menuItemId.slice(-6)}
-                          </p>
+                          <div key={index} className="flex justify-between text-sm text-gray-700">
+                            <span>{item.quantity}x {item.menuItem?.name || `Item #${item.menuItemId.slice(-6)}`}</span>
+                            <span className="font-medium">${(item.menuItem?.price * item.quantity || 0).toFixed(2)}</span>
+                          </div>
                         ))}
+                      </div>
+                      
+                      <div className="border-t pt-2 mb-4">
+                        <div className="flex justify-between text-sm font-semibold">
+                          <span>Total:</span>
+                          <span className="text-green-600">
+                            ${(order.items || []).reduce((total, item) => 
+                              total + ((item.menuItem?.price || 0) * item.quantity), 0
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-600 mt-1">
+                          <span>Cash Received:</span>
+                          <span>${order.cashReceived?.toFixed(2) || '0.00'}</span>
+                        </div>
                       </div>
                       
                       {/* Order Progress */}
@@ -340,10 +426,26 @@ export default function CashierDashboard() {
                       
                       <div className="space-y-1 mb-4">
                         {(order.items || []).map((item, index) => (
-                          <p key={index} className="text-sm text-gray-700">
-                            {item.quantity}x Item #{item.menuItemId.slice(-6)}
-                          </p>
+                          <div key={index} className="flex justify-between text-sm text-gray-700">
+                            <span>{item.quantity}x {item.menuItem?.name || `Item #${item.menuItemId.slice(-6)}`}</span>
+                            <span className="font-medium">${(item.menuItem?.price * item.quantity || 0).toFixed(2)}</span>
+                          </div>
                         ))}
+                      </div>
+                      
+                      <div className="border-t pt-2 mb-4">
+                        <div className="flex justify-between text-sm font-semibold">
+                          <span>Total:</span>
+                          <span className="text-green-600">
+                            ${(order.items || []).reduce((total, item) => 
+                              total + ((item.menuItem?.price || 0) * item.quantity), 0
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-600 mt-1">
+                          <span>Cash Received:</span>
+                          <span>${order.cashReceived?.toFixed(2) || '0.00'}</span>
+                        </div>
                       </div>
                       
                       {/* Order Progress */}

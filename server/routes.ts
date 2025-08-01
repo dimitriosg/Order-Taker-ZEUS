@@ -519,7 +519,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/orders/:id/status', async (req: any, res) => {
     try {
-      const user = { id: 'test-cashier-1', role: 'cashier' }; // Mock user for testing
+      // Get current user from session
+      const userId = req.session?.userId || 'test-manager-1';
+      const user = { id: userId, role: 'cashier' };
       const { status } = req.body;
       const order = await storage.updateOrderStatus(req.params.id, status, user.id);
       

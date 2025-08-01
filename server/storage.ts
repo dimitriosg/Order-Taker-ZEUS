@@ -183,7 +183,11 @@ export class DatabaseStorage implements IStorage {
     const order = await db.query.orders.findFirst({
       where: eq(orders.id, id),
       with: {
-        items: true,
+        items: {
+          with: {
+            menuItem: true,
+          },
+        },
       },
     });
     return order as Order | undefined;
@@ -192,7 +196,11 @@ export class DatabaseStorage implements IStorage {
   async getAllOrders(): Promise<Order[]> {
     const ordersWithItems = await db.query.orders.findMany({
       with: {
-        items: true,
+        items: {
+          with: {
+            menuItem: true,
+          },
+        },
       },
     });
     return ordersWithItems as Order[];
@@ -202,7 +210,11 @@ export class DatabaseStorage implements IStorage {
     const ordersWithItems = await db.query.orders.findMany({
       where: eq(orders.status, status),
       with: {
-        items: true,
+        items: {
+          with: {
+            menuItem: true,
+          },
+        },
       },
     });
     return ordersWithItems as Order[];
@@ -224,7 +236,11 @@ export class DatabaseStorage implements IStorage {
     const ordersWithItems = await db.query.orders.findMany({
       where: eq(orders.waiterId, waiterId),
       with: {
-        items: true,
+        items: {
+          with: {
+            menuItem: true,
+          },
+        },
       },
     });
     return ordersWithItems as Order[];
