@@ -9,6 +9,7 @@ import { Utensils, Receipt, Menu, LogOut, Check, Clock, Plus, User, Edit } from 
 import { NewOrderModal } from "@/components/NewOrderModal";
 import { ProfileModal } from "@/components/ProfileModal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { OrderStatusBadge, OrderStatusProgress } from "@/components/OrderStatusBadge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -456,7 +457,10 @@ export default function WaiterDashboard() {
               ) : (
                 <div className="space-y-4">
                   {activeOrders.map((order) => (
-                    <Card key={order.id}>
+                    <Card key={order.id} className={`order-card-enter ${
+                      order.status === "ready" ? "order-card-ready" :
+                      order.status === "in-prep" ? "order-card-in-prep" : ""
+                    }`}>
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
                           <div>
@@ -465,14 +469,7 @@ export default function WaiterDashboard() {
                               Order #{order.id.slice(-6)} - {new Date(order.createdAt).toLocaleTimeString()}
                             </p>
                           </div>
-                          <Badge variant={
-                            order.status === "paid" ? "secondary" :
-                            order.status === "in-prep" ? "default" :
-                            order.status === "ready" ? "destructive" : "outline"
-                          }>
-                            {order.status === "in-prep" ? "In Preparation" :
-                             order.status === "ready" ? "Ready" : order.status}
-                          </Badge>
+                          <OrderStatusBadge status={order.status} animated={true} />
                         </div>
                         
                         <div className="space-y-2 mb-4">
@@ -481,6 +478,12 @@ export default function WaiterDashboard() {
                               <span>{item.quantity}x Item #{item.menuItemId.slice(-6)}</span>
                             </div>
                           ))}
+                        </div>
+                        
+                        {/* Order Progress */}
+                        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-gray-600 mb-2">Order Progress</p>
+                          <OrderStatusProgress currentStatus={order.status} animated={true} />
                         </div>
                         
                         <div className="flex justify-between items-center pt-4 border-t border-gray-200">
@@ -554,7 +557,10 @@ export default function WaiterDashboard() {
                           
                           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                             {statusOrders.map((order) => (
-                              <Card key={order.id} className={`border-l-4 border-${config.color}-500 ${config.bgColor}`}>
+                              <Card key={order.id} className={`border-l-4 border-${config.color}-500 ${config.bgColor} order-card-enter ${
+                                order.status === "ready" ? "order-card-ready" :
+                                order.status === "in-prep" ? "order-card-in-prep" : ""
+                              }`}>
                                 <CardContent className="p-4">
                                   <div className="flex justify-between items-start mb-3">
                                     <div>
@@ -566,14 +572,7 @@ export default function WaiterDashboard() {
                                         {new Date(order.createdAt).toLocaleTimeString()}
                                       </p>
                                     </div>
-                                    <Badge variant={
-                                      order.status === "paid" ? "secondary" :
-                                      order.status === "in-prep" ? "default" :
-                                      "destructive"
-                                    }>
-                                      {order.status === "in-prep" ? "In Prep" :
-                                       order.status === "ready" ? "Ready" : "Paid"}
-                                    </Badge>
+                                    <OrderStatusBadge status={order.status} animated={true} size="sm" />
                                   </div>
                                   
                                   <div className="space-y-1 mb-3">

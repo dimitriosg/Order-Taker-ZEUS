@@ -2,6 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Enhanced Order Status Animations */
+@keyframes statusPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes statusSlide {
+  0% {
+    transform: translateX(-10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes statusGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.6);
+  }
+}
+
+@keyframes statusBounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40%, 43% {
+    transform: translateY(-8px);
+  }
+  70% {
+    transform: translateY(-4px);
+  }
+  90% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Status-specific animations */
+.status-paid {
+  animation: statusSlide 0.5s ease-out;
+}
+
+.status-in-prep {
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+.status-ready {
+  animation: statusBounce 1s ease-in-out infinite, statusGlow 2s ease-in-out infinite;
+}
+
+.status-served {
+  animation: statusSlide 0.5s ease-out;
+}
+
+/* Order card animations */
+.order-card-enter {
+  animation: statusSlide 0.6s ease-out;
+}
+
+.order-card-ready {
+  border-color: rgb(34, 197, 94) !important;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+  animation: statusGlow 3s ease-in-out infinite;
+}
+
+.order-card-in-prep {
+  border-color: rgb(245, 158, 11) !important;
+  animation: statusPulse 3s ease-in-out infinite;
+}
+
+/* Progress bar animations */
+.progress-bar-fill {
+  animation: progressFill 0.8s ease-out;
+}
+
+/* Notification pulse for ready orders */
+.ready-notification {
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
 :root {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(20, 14.3%, 4.1%);

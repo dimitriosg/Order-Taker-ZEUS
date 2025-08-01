@@ -10,6 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileModal } from "@/components/ProfileModal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { OrderStatusBadge, OrderStatusProgress } from "@/components/OrderStatusBadge";
 
 interface Order {
   id: string;
@@ -195,7 +196,7 @@ export default function CashierDashboard() {
                 <p className="text-center text-gray-500 py-8">No new orders</p>
               ) : (
                 newOrders.map((order) => (
-                  <Card key={order.id} className="border border-gray-200">
+                  <Card key={order.id} className="border border-gray-200 order-card-enter">
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -205,9 +206,12 @@ export default function CashierDashboard() {
                             {new Date(order.createdAt).toLocaleTimeString()}
                           </p>
                         </div>
-                        <span className="text-sm font-medium text-green-600">
-                          ${order.cashReceived}
-                        </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <OrderStatusBadge status={order.status} animated={true} size="sm" />
+                          <span className="text-sm font-medium text-green-600">
+                            ${order.cashReceived}
+                          </span>
+                        </div>
                       </div>
                       
                       <div className="space-y-1 mb-4">
@@ -216,6 +220,12 @@ export default function CashierDashboard() {
                             {item.quantity}x Item #{item.menuItemId.slice(-6)}
                           </p>
                         ))}
+                      </div>
+                      
+                      {/* Order Progress */}
+                      <div className="mb-4 p-2 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-2">Order Progress</p>
+                        <OrderStatusProgress currentStatus={order.status} animated={true} />
                       </div>
                       
                       <Button
@@ -249,7 +259,7 @@ export default function CashierDashboard() {
                 <p className="text-center text-gray-500 py-8">No orders in preparation</p>
               ) : (
                 inPrepOrders.map((order) => (
-                  <Card key={order.id} className="border border-gray-200">
+                  <Card key={order.id} className="border border-gray-200 order-card-enter order-card-in-prep">
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -259,9 +269,12 @@ export default function CashierDashboard() {
                             {new Date(order.createdAt).toLocaleTimeString()}
                           </p>
                         </div>
-                        <span className="text-sm font-medium text-amber-600">
-                          ${order.cashReceived}
-                        </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <OrderStatusBadge status={order.status} animated={true} size="sm" />
+                          <span className="text-sm font-medium text-amber-600">
+                            ${order.cashReceived}
+                          </span>
+                        </div>
                       </div>
                       
                       <div className="space-y-1 mb-4">
@@ -270,6 +283,12 @@ export default function CashierDashboard() {
                             {item.quantity}x Item #{item.menuItemId.slice(-6)}
                           </p>
                         ))}
+                      </div>
+                      
+                      {/* Order Progress */}
+                      <div className="mb-4 p-2 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-2">Order Progress</p>
+                        <OrderStatusProgress currentStatus={order.status} animated={true} />
                       </div>
                       
                       <Button
@@ -303,7 +322,7 @@ export default function CashierDashboard() {
                 <p className="text-center text-gray-500 py-8">No orders ready</p>
               ) : (
                 readyOrders.map((order) => (
-                  <Card key={order.id} className="border border-gray-200 bg-green-50">
+                  <Card key={order.id} className="border border-gray-200 bg-green-50 order-card-enter order-card-ready">
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -311,9 +330,12 @@ export default function CashierDashboard() {
                           <p className="text-sm text-gray-600">Order #{order.id.slice(-6)}</p>
                           <p className="text-xs text-gray-500">Ready for pickup</p>
                         </div>
-                        <span className="text-sm font-medium text-green-600">
-                          ${order.cashReceived}
-                        </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <OrderStatusBadge status={order.status} animated={true} size="sm" />
+                          <span className="text-sm font-medium text-green-600">
+                            ${order.cashReceived}
+                          </span>
+                        </div>
                       </div>
                       
                       <div className="space-y-1 mb-4">
@@ -324,9 +346,15 @@ export default function CashierDashboard() {
                         ))}
                       </div>
                       
-                      <div className="flex items-center justify-center p-2 bg-green-100 rounded-lg">
+                      {/* Order Progress */}
+                      <div className="mb-4 p-2 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-2">Order Progress</p>
+                        <OrderStatusProgress currentStatus={order.status} animated={true} />
+                      </div>
+                      
+                      <div className="flex items-center justify-center p-2 bg-green-100 rounded-lg ready-notification">
                         <Bell className="text-green-600 mr-2 h-4 w-4" />
-                        <span className="text-sm font-medium text-green-700">Notify Waiter</span>
+                        <span className="text-sm font-medium text-green-700">Ready - Notify Waiter</span>
                       </div>
                     </CardContent>
                   </Card>
