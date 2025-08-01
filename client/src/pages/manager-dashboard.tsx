@@ -11,7 +11,6 @@ import { AddTableModal } from "@/components/AddTableModal";
 import { BatchTableModal } from "@/components/BatchTableModal";
 import { BatchAssignModal } from "@/components/BatchAssignModal";
 import { ProfileModal } from "@/components/ProfileModal";
-import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { EditUserModal } from "@/components/EditUserModal";
 import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -53,6 +52,7 @@ export default function ManagerDashboard() {
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Staff | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [currency, setCurrency] = useState("EUR");
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(10000); // 10 seconds default
@@ -367,9 +367,9 @@ export default function ManagerDashboard() {
               Table Assignment
             </Button>
             <Button
-              variant={activeView === "profile" ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setActiveView("profile")}
+              variant="ghost"
+              className="w-full justify-start hover:bg-gray-100"
+              onClick={() => setShowProfileModal(true)}
             >
               <User className="mr-3 h-4 w-4" />
               Edit Profile
@@ -1171,18 +1171,7 @@ export default function ManagerDashboard() {
             </div>
           )}
 
-          {activeView === "profile" && (
-            <div>
-              <Card>
-                <div className="p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-bold text-gray-900">Edit Profile</h2>
-                </div>
-                <div className="p-6">
-                  <ProfileEditForm />
-                </div>
-              </Card>
-            </div>
-          )}
+
         </main>
       </div>
 
@@ -1243,6 +1232,10 @@ export default function ManagerDashboard() {
           setSelectedUser(null);
         }}
         user={selectedUser}
+      />
+      <ProfileModal
+        open={showProfileModal}
+        onOpenChange={setShowProfileModal}
       />
 
     </div>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,21 +13,30 @@ interface ProfileModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface User {
+  id: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  role: "waiter" | "cashier" | "manager";
+}
+
 export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth() as { user: User | undefined };
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [name, setName] = useState(user?.name || "");
+  const [name, setName] = useState(user?.firstName || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: { name?: string; password?: string }) => {
-      const response = await apiRequest("PUT", "/api/profile", data);
+      const response = await apiRequest("PUT", `/api/staff/${user?.id}`, data);
       return response.json();
     },
-    onSuccess: (updatedUser) => {
-      updateUser(updatedUser);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
       toast({
         title: "Profile updated",
@@ -60,7 +69,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
 
     const updateData: { name?: string; password?: string } = {};
     
-    if (name !== user?.name) {
+    if (name !== user?.firstName) {
       updateData.name = name;
     }
     
@@ -91,6 +100,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your display name"
             />
+            <p className="text-xs text-gray-500 mt-1">Currently: {user?.firstName || 'Not set'}</p>
           </div>
           
           <div>
