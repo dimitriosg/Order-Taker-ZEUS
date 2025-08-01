@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Eye, EyeOff } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Eye, EyeOff, Upload, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +34,9 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(user?.profileImageUrl || null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: { firstName?: string; lastName?: string; password?: string }) => {
@@ -43,17 +47,53 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully",
+        title: "Image uploaded",
+        description: "Profile image has been updated successfully",
       });
       onOpenChange(false);
-      setPassword("");
-      setConfirmPassword("");
+      setProfileImage(null);
+      setProfileImagePreview(null);
     },
     onError: () => {
       toast({
-        title: "Update failed",
-        description: "Failed to update profile. Please try again.",
+        title: "Upload failed",
+        description: "Failed to upload profile image",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('profileImage', file);
+      
+      const response = await fetch(`/api/upload/profile-image/${user?.id}`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
+      toast({
+        title: "Image uploaded",
+        description: "Profile image has been updated successfully",
+      });
+      onOpenChange(false);
+      setProfileImage(null);
+      setProfileImagePreview(null);
+    },
+    onError: () => {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload profile image",
         variant: "destructive",
       });
     },
@@ -61,6 +101,12 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Handle image upload first if there's a new image
+    if (profileImage) {
+      uploadImageMutation.mutate(profileImage);
+      return;
+    }
     
     if (password && password !== confirmPassword) {
       toast({
@@ -109,6 +155,77 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Profile Picture Section */}
+          <div className="flex flex-col items-center space-y-3 pb-4 border-b">
+            <div className="relative">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={profileImagePreview || user?.profileImageUrl || undefined} />
+                <AvatarFallback className="text-lg">
+                  {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              {profileImagePreview && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileImage(null);
+                    setProfileImagePreview(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col items-center space-y-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center space-x-1"
+              >
+                <Upload className="h-3 w-3" />
+                <span>Change Photo</span>
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (!file.type.startsWith('image/')) {
+                      toast({
+                        title: "Invalid file type",
+                        description: "Please select an image file",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast({
+                        title: "File too large",
+                        description: "Please select an image smaller than 5MB",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    setProfileImage(file);
+                    const reader = new FileReader();
+                    reader.onload = (e) => setProfileImagePreview(e.target?.result as string);
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="hidden"
+              />
+              <p className="text-xs text-gray-500 text-center">
+                Up to 5MB
+              </p>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="firstName">First Name</Label>
@@ -193,9 +310,11 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
             </Button>
             <Button 
               type="submit"
-              disabled={updateProfileMutation.isPending}
+              disabled={updateProfileMutation.isPending || uploadImageMutation.isPending}
             >
-              {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+              {uploadImageMutation.isPending ? "Uploading..." : 
+               updateProfileMutation.isPending ? "Saving..." : 
+               profileImage ? "Upload Image & Save" : "Save Changes"}
             </Button>
           </div>
         </form>

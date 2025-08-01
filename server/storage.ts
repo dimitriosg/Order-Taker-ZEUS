@@ -151,7 +151,7 @@ export class DatabaseStorage implements IStorage {
     return table;
   }
 
-  async updateStaff(id: string, data: { name?: string; firstName?: string; lastName?: string; email?: string; role?: string; password?: string }): Promise<User> {
+  async updateStaff(id: string, data: { name?: string; firstName?: string; lastName?: string; email?: string; role?: string; password?: string; profileImageUrl?: string }): Promise<User> {
     const updateData: any = { updatedAt: new Date() };
     
     // Handle legacy 'name' field or new firstName/lastName fields
@@ -160,6 +160,7 @@ export class DatabaseStorage implements IStorage {
     if (data.lastName !== undefined) updateData.lastName = data.lastName.trim() || null;
     if (data.email !== undefined) updateData.email = data.email.trim() || null;
     if (data.role !== undefined) updateData.role = data.role;
+    if (data.profileImageUrl !== undefined) updateData.profileImageUrl = data.profileImageUrl;
     
     // Handle password if provided (passwords are handled differently in this demo system)
     if (data.password !== undefined) {

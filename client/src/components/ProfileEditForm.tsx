@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Eye, EyeOff, Upload, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,9 +33,12 @@ export function ProfileEditForm() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(user?.profileImageUrl || null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: { firstName?: string; lastName?: string; email?: string; password?: string }) => {
+    mutationFn: async (data: { firstName?: string; lastName?: string; email?: string; password?: string; profileImageUrl?: string }) => {
       const response = await apiRequest("PUT", `/api/staff/${user?.id}`, data);
       return response.json();
     },
@@ -59,8 +63,92 @@ export function ProfileEditForm() {
     },
   });
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setProfileImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfileImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setProfileImage(null);
+    setProfileImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('profileImage', file);
+      
+      const response = await fetch(`/api/upload/profile-image/${user?.id}`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Image uploaded",
+        description: "Profile image has been updated successfully",
+      });
+      // Update the user data with new image URL
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
+      setProfileImage(null);
+    },
+    onError: () => {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload profile image",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleProfileInfoUpdate = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Handle image upload first if there's a new image
+    if (profileImage) {
+      uploadImageMutation.mutate(profileImage);
+      return;
+    }
+    
     const updateData: { firstName?: string; lastName?: string; email?: string } = {};
     
     if (firstName !== user?.firstName) {
@@ -135,6 +223,47 @@ export function ProfileEditForm() {
         <Card>
           <CardContent className="p-6">
             <form onSubmit={handleProfileInfoUpdate} className="space-y-4">
+              {/* Profile Picture Section */}
+              <div className="flex flex-col items-center space-y-4 pb-4 border-b">
+                <div className="relative">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={profileImagePreview || user?.profileImageUrl || undefined} />
+                    <AvatarFallback className="text-lg">
+                      {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  {profileImagePreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-col items-center space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center space-x-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    <span>Upload Photo</span>
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <p className="text-xs text-gray-500 text-center">
+                    JPG, PNG or GIF up to 5MB
+                  </p>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName">First Name</Label>
@@ -176,10 +305,12 @@ export function ProfileEditForm() {
               </div>
               <Button 
                 type="submit"
-                disabled={updateProfileMutation.isPending}
+                disabled={updateProfileMutation.isPending || uploadImageMutation.isPending}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
-                {updateProfileMutation.isPending ? "Updating..." : "Update Profile Information"}
+                {uploadImageMutation.isPending ? "Uploading Image..." : 
+                 updateProfileMutation.isPending ? "Updating..." : 
+                 profileImage ? "Upload Image & Update Profile" : "Update Profile Information"}
               </Button>
             </form>
           </CardContent>

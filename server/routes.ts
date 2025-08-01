@@ -1,16 +1,55 @@
 import type { Express, RequestHandler } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertOrderSchema, insertOrderItemSchema, insertTableSchema, insertMenuItemSchema, insertCategorySchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import jwt from "jsonwebtoken";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+// Configure multer for file uploads
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage_multer = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage_multer,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Auth middleware - temporarily disabled for testing
   // await setupAuth(app);
+  
+  // Serve uploaded files statically
+  app.use('/uploads', express.static(uploadsDir, {
+    maxAge: '1y', // 1 year cache
+  }));
   
   // WebSocket server for real-time updates
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
@@ -570,6 +609,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting staff:", error);
       res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Profile image upload endpoint
+  app.post('/api/upload/profile-image/:userId', upload.single('profileImage'), async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+      
+      // Create the image URL
+      const imageUrl = `/uploads/${req.file.filename}`;
+      
+      // Update user's profile image URL in the database
+      await storage.updateStaff(userId, { profileImageUrl: imageUrl });
+      
+      res.json({ 
+        message: 'Profile image uploaded successfully',
+        imageUrl: imageUrl 
+      });
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      
+      // Clean up uploaded file if database update fails
+      if (req.file) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          console.error("Error cleaning up file:", unlinkError);
+        }
+      }
+      
+      res.status(500).json({ message: 'Failed to upload profile image' });
     }
   });
 
