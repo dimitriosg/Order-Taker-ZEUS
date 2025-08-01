@@ -202,6 +202,7 @@ export class DatabaseStorage implements IStorage {
             menuItem: true,
           },
         },
+        waiter: true,
       },
     });
     return ordersWithItems as Order[];
@@ -216,6 +217,7 @@ export class DatabaseStorage implements IStorage {
             menuItem: true,
           },
         },
+        waiter: true,
       },
     });
     return ordersWithItems as Order[];
@@ -242,6 +244,7 @@ export class DatabaseStorage implements IStorage {
             menuItem: true,
           },
         },
+        waiter: true,
       },
     });
     return ordersWithItems as Order[];
