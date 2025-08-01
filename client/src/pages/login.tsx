@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,21 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Utensils } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, user } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      navigate(`/${user.role}`);
-    }
-  }, [user, navigate]);
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,12 +23,31 @@ export default function Login() {
 
     setIsLoading(true);
     try {
-      await login(username, password);
-      toast({
-        title: "Login successful",
-        description: "Welcome to Restaurant POS",
-      });
+      const response = await apiRequest("POST", "/api/login", { username, password });
+      const data = await response.json();
+      
+      if (data.success) {
+        // Store token if provided
+        if (data.token) {
+          localStorage.setItem("auth_token", data.token);
+        }
+        
+        // Clear query cache and refetch user data
+        queryClient.clear();
+        
+        toast({
+          title: "Login successful",
+          description: "Welcome to Restaurant POS",
+        });
+
+        // Navigate to appropriate dashboard
+        const role = data.user?.role || 'manager';
+        navigate(`/${role}`);
+      } else {
+        throw new Error(data.message || "Login failed");
+      }
     } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: "Invalid username or password",
