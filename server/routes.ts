@@ -285,6 +285,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Register new staff member
+  app.post('/api/register', async (req, res) => {
+    try {
+      const { username, password, role } = req.body;
+      
+      if (!username || !password || !role) {
+        return res.status(400).json({ message: 'Username, password, and role are required' });
+      }
+
+      if (!['waiter', 'cashier', 'manager'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role' });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(username);
+      if (existingUser) {
+        return res.status(400).json({ message: 'User already exists' });
+      }
+
+      // Create new staff member
+      const newStaff = await storage.createUser({
+        email: username,
+        firstName: null,
+        lastName: null,
+        profileImageUrl: null,
+        role: role as "waiter" | "cashier" | "manager"
+      });
+
+      res.status(201).json({ message: 'Staff member created successfully', user: newStaff });
+    } catch (error) {
+      console.error("Error creating staff member:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Order routes
   app.post('/api/orders', async (req: any, res) => {
     try {

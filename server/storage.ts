@@ -21,9 +21,13 @@ import { eq } from "drizzle-orm";
 export interface IStorage {
   // Users - updated for Replit Auth
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: UpsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserTables(userId: string, assignedTables: number[]): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  updateStaff(id: string, updates: { name?: string; role?: string }): Promise<User>;
+  deleteStaff(id: string): Promise<void>;
 
   // Tables
   getAllTables(): Promise<Table[]>;
@@ -51,6 +55,19 @@ export class DatabaseStorage implements IStorage {
   // Users - updated for Replit Auth
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .returning();
     return user;
   }
 
