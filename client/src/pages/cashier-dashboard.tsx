@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useSocket } from "@/contexts/SocketContext";
+import LogoutConfirmModal from "@/components/LogoutConfirmModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +48,11 @@ interface Order {
 export default function CashierDashboard() {
   const { user } = useAuth() as { user: any };
   
-  const logout = async () => {
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = async () => {
     try {
       const response = await apiRequest("POST", "/api/logout", {});
       if (response.ok) {
@@ -67,6 +72,7 @@ export default function CashierDashboard() {
         variant: "destructive",
       });
     }
+    setShowLogoutConfirm(false);
   };
   const socket = useSocket();
   const queryClient = useQueryClient();
@@ -78,6 +84,7 @@ export default function CashierDashboard() {
     return saved ? parseFloat(saved) : 0;
   });
   const [tillInput, setTillInput] = useState<string>("");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Fetch orders by status
   const { data: newOrders = [] } = useQuery<Order[]>({
@@ -213,7 +220,7 @@ export default function CashierDashboard() {
               <Button variant="ghost" onClick={() => setShowProfileModal(true)} size="sm">
                 <User className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" onClick={logout} size="sm">
+              <Button variant="ghost" onClick={handleLogoutClick} size="sm">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -646,6 +653,12 @@ export default function CashierDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <LogoutConfirmModal
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        onConfirm={confirmLogout}
+      />
     </div>
   );
 }

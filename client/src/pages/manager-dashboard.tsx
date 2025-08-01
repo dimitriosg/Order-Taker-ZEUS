@@ -15,6 +15,7 @@ import { ImpersonateModal } from "@/components/ImpersonateModal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { PasswordChangeReminder } from "@/components/PasswordChangeReminder";
+import LogoutConfirmModal from "@/components/LogoutConfirmModal";
 import { EditUserModal } from "@/components/EditUserModal";
 import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -66,7 +67,11 @@ interface TableData {
 export default function ManagerDashboard() {
   const { user } = useAuth() as { user: Staff | undefined };
   
-  const logout = async () => {
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = async () => {
     try {
       const response = await apiRequest("POST", "/api/logout", {});
       if (response.ok) {
@@ -86,6 +91,7 @@ export default function ManagerDashboard() {
         variant: "destructive",
       });
     }
+    setShowLogoutConfirm(false);
   };
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -109,6 +115,7 @@ export default function ManagerDashboard() {
   const [refreshInterval, setRefreshInterval] = useState(10000); // 10 seconds default
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Fetch staff
   const { data: staff = [], isLoading: staffLoading } = useQuery<Staff[]>({
@@ -444,7 +451,7 @@ export default function ManagerDashboard() {
               >
                 <User className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" onClick={logout} size="sm">
+              <Button variant="ghost" onClick={handleLogoutClick} size="sm">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -1608,6 +1615,12 @@ export default function ManagerDashboard() {
           onClose={() => setShowImpersonateModal(false)}
         />
       )}
+
+      <LogoutConfirmModal
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        onConfirm={confirmLogout}
+      />
     </div>
   );
 }
