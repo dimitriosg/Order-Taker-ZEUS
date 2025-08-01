@@ -9,6 +9,7 @@ import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User } from 
 import { AddStaffModal } from "@/components/AddStaffModal";
 import { AddTableModal } from "@/components/AddTableModal";
 import { ProfileModal } from "@/components/ProfileModal";
+import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +34,6 @@ export default function ManagerDashboard() {
   const { toast } = useToast();
   const [activeView, setActiveView] = useState("overview");
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [globalTables, setGlobalTables] = useState(false);
   const [currency, setCurrency] = useState("EUR");
@@ -162,9 +162,9 @@ export default function ManagerDashboard() {
               Table Assignment
             </Button>
             <Button
-              variant="ghost"
+              variant={activeView === "profile" ? "default" : "ghost"}
               className="w-full justify-start"
-              onClick={() => setShowProfileModal(true)}
+              onClick={() => setActiveView("profile")}
             >
               <User className="mr-3 h-4 w-4" />
               Edit Profile
@@ -426,6 +426,19 @@ export default function ManagerDashboard() {
               </Card>
             </div>
           )}
+
+          {activeView === "profile" && (
+            <div>
+              <Card>
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-xl font-bold text-gray-900">Edit Profile</h2>
+                </div>
+                <div className="p-6">
+                  <ProfileEditForm />
+                </div>
+              </Card>
+            </div>
+          )}
         </main>
       </div>
 
@@ -437,10 +450,7 @@ export default function ManagerDashboard() {
         onOpenChange={setShowAddTableModal}
         existingTables={tables.map(t => t.number)}
       />
-      <ProfileModal
-        open={showProfileModal}
-        onOpenChange={setShowProfileModal}
-      />
+
     </div>
   );
 }
