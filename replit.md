@@ -10,6 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Profile Editing Enhancement (January 2025)
+- **Real-time Profile Updates**: Fixed authentication endpoint to fetch actual user data from database instead of mock data
+- **Enhanced Profile Fields**: Added support for firstName, lastName, and email/username editing
+- **Role-based Permissions**: Username field editable only by admin users (managers)
+- **Password Visibility**: Added eye/eye-off toggles to all password fields in profile forms
+- **Database Integration**: Profile changes now properly reflect in the UI immediately after saving
+
 ### Password Change Feature Implementation (January 2025)
 - **Backend Updates**: Added password hashing support to staff update endpoint with bcryptjs
 - **Frontend Components**: Enhanced ProfileModal and ProfileEditForm with password validation

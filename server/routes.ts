@@ -134,24 +134,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Auth session data:', { role, userId, isImpersonating, originalRole: req.session?.originalRole });
       
-      // If impersonating, try to get real user data from database
-      if (isImpersonating) {
-        try {
-          const realUser = await storage.getUser(userId);
-          if (realUser) {
-            console.log('Found impersonated user:', realUser);
-            res.json({
-              ...realUser,
-              isImpersonating: true,
-              originalRole: req.session?.originalRole || 'manager'
-            });
-            return;
-          }
-        } catch (error) {
-          console.error("Error fetching impersonated user:", error);
+      // Try to get real user data from database first
+      try {
+        const realUser = await storage.getUser(userId);
+        if (realUser) {
+          console.log('Found user in database:', realUser);
+          res.json({
+            ...realUser,
+            isImpersonating,
+            originalRole: isImpersonating ? req.session?.originalRole || 'manager' : undefined
+          });
+          return;
         }
+      } catch (error) {
+        console.error("Error fetching user from database:", error);
       }
       
+      // Fallback to mock users if not found in database
       const mockUsers = {
         manager: {
           id: 'test-manager-1',
@@ -186,6 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const userData = mockUsers[role as keyof typeof mockUsers] || mockUsers.manager;
+      console.log('Using fallback mock data for user:', userData);
       res.json({
         ...userData,
         isImpersonating,
