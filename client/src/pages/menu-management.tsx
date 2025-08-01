@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, ImageIcon, Tag, DollarSign, ArrowLeft, FolderPlus, Trash } from "lucide-react";
+import { Plus, Edit, Trash2, ImageIcon, Tag, DollarSign, ArrowLeft, FolderPlus, Trash, PencilIcon } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface MenuItem {
@@ -34,12 +34,15 @@ export default function MenuManagement() {
   
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  const [showEditCategoryDialog, setShowEditCategoryDialog] = useState(false);
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [showSingleDeleteDialog, setShowSingleDeleteDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [editingCategory, setEditingCategory] = useState<string>("");
+  const [editCategoryName, setEditCategoryName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{type: 'all' | 'category' | 'single', category?: string, item?: MenuItem}>({type: 'all'});
 
   // Form state
@@ -310,6 +313,46 @@ export default function MenuManagement() {
     setDeleteTarget({ type: 'single', item });
     setShowSingleDeleteDialog(true);
   };
+
+  const handleEditCategory = (categoryName: string) => {
+    setEditingCategory(categoryName);
+    setEditCategoryName(categoryName);
+    setShowEditCategoryDialog(true);
+  };
+
+  // Edit category mutation
+  const editCategoryMutation = useMutation({
+    mutationFn: async ({ oldName, newName }: { oldName: string, newName: string }) => {
+      // Get all items in the category
+      const itemsInCategory = menuItems.filter(item => item.category === oldName);
+      
+      // Update each item's category
+      await Promise.all(itemsInCategory.map(item => 
+        apiRequest("PATCH", `/api/menu/${item.id}`, {
+          ...item,
+          category: newName
+        })
+      ));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/menu"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/menu/categories"] });
+      toast({
+        title: "Category renamed",
+        description: `Category "${editingCategory}" has been renamed to "${editCategoryName}"`,
+      });
+      setShowEditCategoryDialog(false);
+      setEditingCategory("");
+      setEditCategoryName("");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to rename category",
+        variant: "destructive",
+      });
+    },
+  });
 
   const executeBulkDelete = (force: boolean = false) => {
     if (deleteTarget.type === 'single' && deleteTarget.item) {
@@ -648,15 +691,27 @@ export default function MenuManagement() {
                       {itemsByCategory[category].length} items
                     </Badge>
                   </div>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => handleBulkDelete('category', category)}
-                    disabled={itemsByCategory[category].length === 0}
-                  >
-                    <Trash className="w-3 h-3 mr-1" />
-                    Delete All
-                  </Button>
+                  <div className="flex space-x-2">
+                    {category !== "uncategorized" && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditCategory(category)}
+                      >
+                        <PencilIcon className="w-3 h-3 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => handleBulkDelete('category', category)}
+                      disabled={itemsByCategory[category].length === 0}
+                    >
+                      <Trash className="w-3 h-3 mr-1" />
+                      Delete All
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -763,6 +818,50 @@ export default function MenuManagement() {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Category Dialog */}
+      <Dialog open={showEditCategoryDialog} onOpenChange={setShowEditCategoryDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="editCategoryName">Category Name</Label>
+              <Input
+                id="editCategoryName"
+                value={editCategoryName}
+                onChange={(e) => setEditCategoryName(e.target.value)}
+                placeholder="Enter new category name"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowEditCategoryDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (!editCategoryName.trim()) {
+                    toast({
+                      title: "Error",
+                      description: "Please enter a category name",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  editCategoryMutation.mutate({
+                    oldName: editingCategory,
+                    newName: editCategoryName.trim()
+                  });
+                }}
+                disabled={editCategoryMutation.isPending}
+              >
+                {editCategoryMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Single Item Delete Confirmation Dialog */}
       <Dialog open={showSingleDeleteDialog} onOpenChange={setShowSingleDeleteDialog}>
