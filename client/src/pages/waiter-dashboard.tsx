@@ -156,12 +156,12 @@ export default function WaiterDashboard() {
 
   const getTableStatus = (tableNumber: number) => {
     const table = tables.find(t => t.number === tableNumber);
-    const hasActiveOrder = orders.some(order => 
+    const hasActiveOrder = (orders || []).some(order => 
       order.tableNumber === tableNumber && order.status !== "served"
     );
     
     if (hasActiveOrder) {
-      const order = orders.find(o => o.tableNumber === tableNumber && o.status !== "served");
+      const order = (orders || []).find(o => o.tableNumber === tableNumber && o.status !== "served");
       return {
         status: order?.status === "ready" ? "ready" : "occupied",
         color: order?.status === "ready" ? "red" : "amber"
@@ -174,7 +174,7 @@ export default function WaiterDashboard() {
   // Show all tables but indicate accessibility
   const filteredTables = tables;
 
-  const activeOrders = orders.filter(order => order.status !== "served");
+  const activeOrders = (orders || []).filter(order => order.status !== "served");
 
   // Format table display name
   const getTableDisplayName = (table: Table) => {
@@ -468,7 +468,7 @@ export default function WaiterDashboard() {
                         </div>
                         
                         <div className="space-y-2 mb-4">
-                          {order.items.map((item, index) => (
+                          {(order.items || []).map((item, index) => (
                             <div key={index} className="flex justify-between text-sm">
                               <span>{item.quantity}x Item #{item.menuItemId.slice(-6)}</span>
                             </div>
