@@ -160,19 +160,48 @@ export default function MenuManagement() {
         ? menuItems 
         : menuItems.filter(item => item.category === category);
       
-      await Promise.all(itemsToDelete.map(item => 
-        apiRequest("DELETE", `/api/menu/${item.id}`)
-      ));
+      const results = await Promise.allSettled(
+        itemsToDelete.map(async (item) => {
+          try {
+            await apiRequest("DELETE", `/api/menu/${item.id}`);
+            return { success: true, item: item.name };
+          } catch (error) {
+            return { success: false, item: item.name, error };
+          }
+        })
+      );
+      
+      return results;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (results, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/menu"] });
       queryClient.invalidateQueries({ queryKey: ["/api/menu/categories"] });
-      const description = variables.type === 'all' 
-        ? "All menu items have been deleted" 
-        : `All items in "${variables.category}" category have been deleted`;
+      
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      const failedCount = results.filter(r => r.status === 'fulfilled' && !r.value.success).length;
+      
+      if (failedCount === 0) {
+        const description = variables.type === 'all' 
+          ? `All ${successCount} menu items have been deleted` 
+          : `All ${successCount} items in "${variables.category}" category have been deleted`;
+        toast({
+          title: "Bulk delete completed",
+          description,
+        });
+      } else {
+        toast({
+          title: "Bulk delete partially completed",
+          description: `${successCount} items deleted, ${failedCount} items could not be deleted (they may be referenced in existing orders)`,
+          variant: "destructive",
+        });
+      }
+      setShowDeleteConfirmDialog(false);
+    },
+    onError: () => {
       toast({
-        title: "Bulk delete completed",
-        description,
+        title: "Bulk delete failed",
+        description: "An error occurred during bulk deletion",
+        variant: "destructive",
       });
       setShowDeleteConfirmDialog(false);
     },
@@ -647,8 +676,8 @@ export default function MenuManagement() {
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
               {deleteTarget.type === 'all' 
-                ? `Are you sure you want to delete all ${menuItems.length} menu items? This action cannot be undone.`
-                : `Are you sure you want to delete all ${menuItems.filter(item => item.category === deleteTarget.category).length} items in the "${deleteTarget.category}" category? This action cannot be undone.`
+                ? `Are you sure you want to delete all ${menuItems.length} menu items? Items that are referenced in existing orders cannot be deleted and will be skipped. This action cannot be undone.`
+                : `Are you sure you want to delete all ${menuItems.filter(item => item.category === deleteTarget.category).length} items in the "${deleteTarget.category}" category? Items that are referenced in existing orders cannot be deleted and will be skipped. This action cannot be undone.`
               }
             </p>
             <div className="flex justify-end space-x-2">
