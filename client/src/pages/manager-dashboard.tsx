@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User, Download, TrendingUp, Clock, DollarSign } from "lucide-react";
+import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User, Download, TrendingUp, Clock, DollarSign, Settings } from "lucide-react";
 import { AddStaffModal } from "@/components/AddStaffModal";
 import { AddTableModal } from "@/components/AddTableModal";
+import { BatchTableModal } from "@/components/BatchTableModal";
+import { BatchAssignModal } from "@/components/BatchAssignModal";
 import { ProfileModal } from "@/components/ProfileModal";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,6 +41,9 @@ export default function ManagerDashboard() {
   const [activeView, setActiveView] = useState("overview");
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   const [showAddTableModal, setShowAddTableModal] = useState(false);
+  const [showRemoveTableModal, setShowRemoveTableModal] = useState(false);
+  const [showAssignTableModal, setShowAssignTableModal] = useState(false);
+  const [selectedWaiterForAssignment, setSelectedWaiterForAssignment] = useState<string | null>(null);
   const [globalTables, setGlobalTables] = useState(false);
   const [currency, setCurrency] = useState("EUR");
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
@@ -75,19 +80,35 @@ export default function ManagerDashboard() {
     },
   });
 
-  // Create table mutation
+  // Create table mutation (supports both single and batch)
   const createTableMutation = useMutation({
-    mutationFn: async (tableNumber: number) => {
-      const response = await apiRequest("POST", "/api/tables", { number: tableNumber });
+    mutationFn: async (data: { tables: number[] }) => {
+      const response = await apiRequest("POST", "/api/tables/batch", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
       toast({
-        title: "Table created",
-        description: "New table has been added successfully",
+        title: "Tables created",
+        description: `${data.created} table(s) added successfully`,
       });
       setShowAddTableModal(false);
+    },
+  });
+
+  // Remove table mutation (supports both single and batch)
+  const removeTableMutation = useMutation({
+    mutationFn: async (data: { tables: number[] }) => {
+      const response = await apiRequest("DELETE", "/api/tables/batch", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
+      toast({
+        title: "Tables removed",
+        description: `${data.removed} table(s) removed successfully`,
+      });
+      setShowRemoveTableModal(false);
     },
   });
 
@@ -817,7 +838,15 @@ export default function ManagerDashboard() {
                         className="bg-blue-600 hover:bg-blue-700"
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Table
+                        Add Tables
+                      </Button>
+                      <Button
+                        onClick={() => setShowRemoveTableModal(true)}
+                        variant="outline"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remove Tables
                       </Button>
                       <div className="flex items-center space-x-2">
                         <Switch
@@ -870,9 +899,22 @@ export default function ManagerDashboard() {
                         </div>
                         
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Assigned Tables
-                          </label>
+                          <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                              Assigned Tables
+                            </label>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedWaiterForAssignment(waiter.id);
+                                setShowAssignTableModal(true);
+                              }}
+                            >
+                              <Settings className="mr-1 h-3 w-3" />
+                              Batch Assign
+                            </Button>
+                          </div>
                           <div className="grid grid-cols-6 gap-2">
                             {tables.map((table) => {
                               const isAssigned = waiter.assignedTables?.includes(table.number) || false;
@@ -1046,10 +1088,44 @@ export default function ManagerDashboard() {
       {showAddStaffModal && (
         <AddStaffModal onClose={() => setShowAddStaffModal(false)} />
       )}
-      <AddTableModal
-        open={showAddTableModal}
+      <BatchTableModal 
+        open={showAddTableModal} 
         onOpenChange={setShowAddTableModal}
+        onSubmit={(tables) => createTableMutation.mutate({ tables })}
+        isLoading={createTableMutation.isPending}
+        title="Add Tables"
+        description="Add tables individually or in batches"
         existingTables={tables.map(t => t.number)}
+        mode="add"
+      />
+      <BatchTableModal 
+        open={showRemoveTableModal} 
+        onOpenChange={setShowRemoveTableModal}
+        onSubmit={(tables) => removeTableMutation.mutate({ tables })}
+        isLoading={removeTableMutation.isPending}
+        title="Remove Tables"
+        description="Remove tables individually or in batches"
+        existingTables={tables.map(t => t.number)}
+        mode="remove"
+      />
+      <BatchAssignModal 
+        open={showAssignTableModal} 
+        onOpenChange={setShowAssignTableModal}
+        waiterId={selectedWaiterForAssignment}
+        waiterName={staff.find(s => s.id === selectedWaiterForAssignment)?.firstName || 'Waiter'}
+        existingTables={tables.map(t => t.number)}
+        assignedTables={staff.find(s => s.id === selectedWaiterForAssignment)?.assignedTables || []}
+        onSubmit={(tables) => {
+          if (selectedWaiterForAssignment) {
+            updateTablesMutation.mutate({ 
+              staffId: selectedWaiterForAssignment, 
+              assignedTables: tables 
+            });
+            setShowAssignTableModal(false);
+            setSelectedWaiterForAssignment(null);
+          }
+        }}
+        isLoading={updateTablesMutation.isPending}
       />
 
     </div>

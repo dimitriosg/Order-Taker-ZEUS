@@ -103,6 +103,12 @@ export class DatabaseStorage implements IStorage {
     return table;
   }
 
+  async removeTable(tableNumber: number): Promise<void> {
+    await db
+      .delete(tables)
+      .where(eq(tables.number, tableNumber));
+  }
+
   async getAllMenuItems(): Promise<MenuItem[]> {
     return await db.select().from(menuItems);
   }

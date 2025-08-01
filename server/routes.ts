@@ -188,6 +188,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Batch table operations
+  app.post('/api/tables/batch', async (req, res) => {
+    try {
+      const { tables } = req.body;
+      if (!Array.isArray(tables) || tables.length === 0) {
+        return res.status(400).json({ message: 'Tables array is required' });
+      }
+
+      const results = [];
+      let created = 0;
+      
+      for (const tableNumber of tables) {
+        try {
+          const validatedData = insertTableSchema.parse({ number: tableNumber });
+          const table = await storage.createTable(validatedData);
+          results.push(table);
+          created++;
+        } catch (error) {
+          // Skip tables that already exist or fail validation
+          console.log(`Skipped table ${tableNumber}:`, error);
+        }
+      }
+
+      res.json({ created, tables: results });
+    } catch (error) {
+      console.error("Error creating tables in batch:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.delete('/api/tables/batch', async (req, res) => {
+    try {
+      const { tables } = req.body;
+      if (!Array.isArray(tables) || tables.length === 0) {
+        return res.status(400).json({ message: 'Tables array is required' });
+      }
+
+      let removed = 0;
+      
+      for (const tableNumber of tables) {
+        try {
+          await storage.removeTable(tableNumber);
+          removed++;
+        } catch (error) {
+          // Skip tables that don't exist
+          console.log(`Skipped removing table ${tableNumber}:`, error);
+        }
+      }
+
+      res.json({ removed });
+    } catch (error) {
+      console.error("Error removing tables in batch:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Order routes
   app.post('/api/orders', async (req: any, res) => {
     try {
