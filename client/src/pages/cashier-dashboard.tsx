@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScanBarcode, Clock, Check, Receipt, LogOut, Bell, User, DollarSign, ShoppingCart, Settings } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { showOrderStatusNotification, showNewOrderNotification } from "@/lib/orderNotifications";
 import { ProfileModal } from "@/components/ProfileModal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { OrderStatusBadge, OrderStatusProgress } from "@/components/OrderStatusBadge";
@@ -115,9 +116,11 @@ export default function CashierDashboard() {
   useEffect(() => {
     const handleNewOrder = (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders/status/paid"] });
-      toast({
-        title: "New Order Received!",
-        description: `Table ${data.order.tableNumber} has placed a new order`,
+      
+      // Show new order notification
+      showNewOrderNotification({
+        order: data.order,
+        userRole: 'cashier'
       });
     };
 
@@ -127,6 +130,13 @@ export default function CashierDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/orders/status/in-prep"] });
       queryClient.invalidateQueries({ queryKey: ["/api/orders/status/ready"] });
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      
+      // Show comprehensive status notification
+      showOrderStatusNotification({
+        order: data.order,
+        userRole: 'cashier',
+        previousStatus: data.previousStatus
+      });
     };
 
     socket.on("newOrder", handleNewOrder);

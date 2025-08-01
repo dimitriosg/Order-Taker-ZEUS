@@ -644,12 +644,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session?.userId || 'test-manager-1';
       const user = { id: userId, role: 'cashier' };
       const { status } = req.body;
+      
+      // Get current order to track previous status
+      const currentOrder = await storage.getOrderById(req.params.id);
+      const previousStatus = currentOrder?.status;
+      
       const order = await storage.updateOrderStatus(req.params.id, status, user.id);
       
-      // Broadcast status change to all roles
+      // Broadcast status change to all roles with previous status
       const message = {
         type: 'order_status_updated',
-        order: order
+        order: order,
+        previousStatus: previousStatus
       };
       
       broadcastToRole('waiter', message);

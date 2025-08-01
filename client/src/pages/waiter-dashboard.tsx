@@ -12,6 +12,7 @@ import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { OrderStatusBadge, OrderStatusProgress } from "@/components/OrderStatusBadge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { showOrderStatusNotification, showNewOrderNotification, showCrossWaiterNotification } from "@/lib/orderNotifications";
 
 interface Table {
   id: string;
@@ -109,12 +110,12 @@ export default function WaiterDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
       queryClient.invalidateQueries({ queryKey: ["/api/orders/status"] });
       
-      if (data.order.status === "ready") {
-        toast({
-          title: "Order Ready!",
-          description: `Table ${data.order.tableNumber} order is ready for pickup`,
-        });
-      }
+      // Show comprehensive status notification
+      showOrderStatusNotification({
+        order: data.order,
+        userRole: 'waiter',
+        previousStatus: data.previousStatus
+      });
     };
 
     const handleCrossWaiterOrder = (data: any) => {
@@ -123,17 +124,19 @@ export default function WaiterDashboard() {
         queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
         queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
         
-        toast({
-          title: "Order Taken on Your Behalf",
-          description: data.message,
-          duration: 8000, // Show longer for important notifications
-        });
+        showCrossWaiterNotification(data);
       }
     };
 
     const handleNewOrder = (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
+      
+      // Show new order notification
+      showNewOrderNotification({
+        order: data.order,
+        userRole: 'waiter'
+      });
     };
 
     socket.on("order_status_updated", handleOrderUpdate);

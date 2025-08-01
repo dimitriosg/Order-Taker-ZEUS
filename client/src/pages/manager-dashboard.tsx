@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useSocket } from "@/contexts/SocketContext";
+import { showOrderStatusNotification, showNewOrderNotification } from "@/lib/orderNotifications";
 
 interface Order {
   id: string;
@@ -68,6 +70,7 @@ export default function ManagerDashboard() {
   };
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const socket = useSocket();
   const [activeView, setActiveView] = useState("overview");
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   const [showAddTableModal, setShowAddTableModal] = useState(false);
@@ -101,6 +104,40 @@ export default function ManagerDashboard() {
     queryKey: ["/api/orders"],
     refetchInterval: activeView === "monitor" ? refreshInterval : false,
   });
+
+  // Socket listeners for real-time notifications
+  useEffect(() => {
+    const handleNewOrder = (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
+      
+      // Show new order notification
+      showNewOrderNotification({
+        order: data.order,
+        userRole: 'manager'
+      });
+    };
+
+    const handleOrderStatusUpdate = (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
+      
+      // Show comprehensive status notification
+      showOrderStatusNotification({
+        order: data.order,
+        userRole: 'manager',
+        previousStatus: data.previousStatus
+      });
+    };
+
+    socket.on("newOrder", handleNewOrder);
+    socket.on("order_status_updated", handleOrderStatusUpdate);
+
+    return () => {
+      socket.off("newOrder", handleNewOrder);
+      socket.off("order_status_updated", handleOrderStatusUpdate);
+    };
+  }, [socket, queryClient]);
 
   // Update table assignments mutation
   const updateTablesMutation = useMutation({
