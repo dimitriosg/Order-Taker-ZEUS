@@ -419,7 +419,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order routes
   app.post('/api/orders', async (req: any, res) => {
     try {
-      const user = { id: 'test-waiter-1', role: 'waiter' }; // Mock user for testing
+      // Get current user info from session
+      const userId = req.session?.userId || 'test-manager-1';
+      const userRole = req.session?.userRole || 'manager';
+      const user = { id: userId, role: userRole };
 
       const { tableNumber, items, cashReceived } = req.body;
       
