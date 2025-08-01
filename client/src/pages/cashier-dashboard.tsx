@@ -28,7 +28,7 @@ interface Order {
 }
 
 export default function CashierDashboard() {
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: any };
   
   const logout = () => {
     window.location.href = "/api/logout";
@@ -215,7 +215,7 @@ export default function CashierDashboard() {
                       </div>
                       
                       <div className="space-y-1 mb-4">
-                        {order.items.map((item, index) => (
+                        {(order.items || []).map((item, index) => (
                           <p key={index} className="text-sm text-gray-700">
                             {item.quantity}x Item #{item.menuItemId.slice(-6)}
                           </p>
@@ -278,7 +278,7 @@ export default function CashierDashboard() {
                       </div>
                       
                       <div className="space-y-1 mb-4">
-                        {order.items.map((item, index) => (
+                        {(order.items || []).map((item, index) => (
                           <p key={index} className="text-sm text-gray-700">
                             {item.quantity}x Item #{item.menuItemId.slice(-6)}
                           </p>
@@ -339,7 +339,7 @@ export default function CashierDashboard() {
                       </div>
                       
                       <div className="space-y-1 mb-4">
-                        {order.items.map((item, index) => (
+                        {(order.items || []).map((item, index) => (
                           <p key={index} className="text-sm text-gray-700">
                             {item.quantity}x Item #{item.menuItemId.slice(-6)}
                           </p>

@@ -180,16 +180,32 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOrderById(id: string): Promise<Order | undefined> {
-    const [order] = await db.select().from(orders).where(eq(orders.id, id));
-    return order;
+    const order = await db.query.orders.findFirst({
+      where: eq(orders.id, id),
+      with: {
+        items: true,
+      },
+    });
+    return order as Order | undefined;
   }
 
   async getAllOrders(): Promise<Order[]> {
-    return await db.select().from(orders);
+    const ordersWithItems = await db.query.orders.findMany({
+      with: {
+        items: true,
+      },
+    });
+    return ordersWithItems as Order[];
   }
 
   async getOrdersByStatus(status: "paid" | "in-prep" | "ready" | "served"): Promise<Order[]> {
-    return await db.select().from(orders).where(eq(orders.status, status));
+    const ordersWithItems = await db.query.orders.findMany({
+      where: eq(orders.status, status),
+      with: {
+        items: true,
+      },
+    });
+    return ordersWithItems as Order[];
   }
 
   async updateOrderStatus(id: string, status: "paid" | "in-prep" | "ready" | "served", cashierId?: string): Promise<Order> {
@@ -205,7 +221,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOrdersByWaiter(waiterId: string): Promise<Order[]> {
-    return await db.select().from(orders).where(eq(orders.waiterId, waiterId));
+    const ordersWithItems = await db.query.orders.findMany({
+      where: eq(orders.waiterId, waiterId),
+      with: {
+        items: true,
+      },
+    });
+    return ordersWithItems as Order[];
   }
 
   async createOrderItem(insertItem: InsertOrderItem): Promise<OrderItem> {
