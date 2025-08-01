@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertOrderSchema, insertOrderItemSchema, insertTableSchema, insertMenuItemSchema, insertCategorySchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import jwt from "jsonwebtoken";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -217,20 +218,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Login route with role selection
+  // Login route with username/password authentication
   app.post('/api/login', async (req: any, res) => {
     try {
-      const { role } = req.body;
-      if (!['manager', 'waiter', 'cashier'].includes(role)) {
-        return res.status(400).json({ message: "Invalid role" });
+      const { username, password, role } = req.body;
+      
+      // Demo credentials for each role
+      const demoCredentials = {
+        'manager': { username: 'manager', password: 'manager123' },
+        'waiter': { username: 'waiter', password: 'waiter123' },
+        'cashier': { username: 'cashier', password: 'cashier123' }
+      };
+      
+      let userRole = null;
+      let userId = null;
+      
+      // Support both username/password login and legacy role-based login
+      if (username && password) {
+        // Username/password authentication
+        for (const [checkRole, credentials] of Object.entries(demoCredentials)) {
+          if (credentials.username === username && credentials.password === password) {
+            userRole = checkRole;
+            userId = `test-${checkRole}-1`;
+            break;
+          }
+        }
+        
+        if (!userRole) {
+          return res.status(401).json({ message: "Invalid username or password" });
+        }
+      } else if (role) {
+        // Legacy role-based login (for landing page)
+        if (!['manager', 'waiter', 'cashier'].includes(role)) {
+          return res.status(400).json({ message: "Invalid role" });
+        }
+        userRole = role;
+        userId = `test-${role}-1`;
+      } else {
+        return res.status(400).json({ message: "Username and password or role required" });
       }
       
-      // Store role in session for demo and clear logout flag
+      // Store role and user in session and clear logout flag
       if (!req.session) req.session = {};
-      req.session.userRole = role;
+      req.session.userRole = userRole;
+      req.session.userId = userId;
       req.session.loggedOut = false;
+      req.session.isImpersonating = false;
       
-      res.json({ success: true, role });
+      // Create JWT token for frontend
+      const userData = {
+        id: userId,
+        username: username || userRole,
+        role: userRole,
+        assignedTables: userRole === 'waiter' ? [1, 2, 3] : null,
+        name: userRole === 'manager' ? 'Test Manager' : 
+              userRole === 'waiter' ? 'Test Waiter' : 'Test Cashier'
+      };
+      
+      const token = jwt.sign(userData, 'demo-secret', { expiresIn: '24h' });
+      
+      res.json({ 
+        success: true, 
+        token,
+        user: userData
+      });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });

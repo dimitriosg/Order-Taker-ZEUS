@@ -58,6 +58,16 @@ export default function Login() {
         
         <Card className="bg-white p-8 rounded-xl shadow-xl">
           <CardContent className="space-y-6 p-0">
+            {/* Demo Credentials Info */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+              <p className="font-medium text-blue-800 mb-2">Demo Login Credentials:</p>
+              <div className="text-blue-700 space-y-1">
+                <p><strong>Manager:</strong> manager / manager123</p>
+                <p><strong>Waiter:</strong> waiter / waiter123</p>
+                <p><strong>Cashier:</strong> cashier / cashier123</p>
+              </div>
+            </div>
+            
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <Label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
