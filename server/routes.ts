@@ -491,10 +491,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/orders', async (req: any, res) => {
     try {
-      const orders = await storage.getOrdersByStatus('paid');
+      const orders = await storage.getAllOrders();
       res.json(orders);
     } catch (error) {
       console.error("Error fetching orders:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Get orders by status - for cashier dashboard
+  app.get('/api/orders/status/:status', async (req: any, res) => {
+    try {
+      const { status } = req.params;
+      const validStatuses = ['paid', 'in-prep', 'ready', 'served'];
+      
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: 'Invalid status' });
+      }
+      
+      const orders = await storage.getOrdersByStatus(status);
+      res.json(orders);
+    } catch (error) {
+      console.error(`Error fetching orders by status ${req.params.status}:`, error);
       res.status(500).json({ message: 'Server error' });
     }
   });

@@ -54,7 +54,7 @@ export default function CashierDashboard() {
   // Update order status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      const response = await apiRequest("PUT", `/api/orders/${orderId}/status`, { status });
+      const response = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
       return response.json();
     },
     onSuccess: () => {

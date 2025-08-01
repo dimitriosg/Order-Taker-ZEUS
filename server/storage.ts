@@ -42,6 +42,7 @@ export interface IStorage {
   // Orders
   createOrder(order: InsertOrder): Promise<Order>;
   getOrderById(id: string): Promise<Order | undefined>;
+  getAllOrders(): Promise<Order[]>;
   getOrdersByStatus(status: "paid" | "in-prep" | "ready" | "served"): Promise<Order[]>;
   updateOrderStatus(id: string, status: "paid" | "in-prep" | "ready" | "served", cashierId?: string): Promise<Order>;
   getOrdersByWaiter(waiterId: string): Promise<Order[]>;
@@ -181,6 +182,10 @@ export class DatabaseStorage implements IStorage {
   async getOrderById(id: string): Promise<Order | undefined> {
     const [order] = await db.select().from(orders).where(eq(orders.id, id));
     return order;
+  }
+
+  async getAllOrders(): Promise<Order[]> {
+    return await db.select().from(orders);
   }
 
   async getOrdersByStatus(status: "paid" | "in-prep" | "ready" | "served"): Promise<Order[]> {
