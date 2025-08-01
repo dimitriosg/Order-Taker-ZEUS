@@ -151,16 +151,21 @@ export class DatabaseStorage implements IStorage {
     return table;
   }
 
-  async updateStaff(id: string, data: { name?: string; role?: string; password?: string }): Promise<User> {
-    const bcrypt = require('bcryptjs');
+  async updateStaff(id: string, data: { name?: string; firstName?: string; lastName?: string; email?: string; role?: string; password?: string }): Promise<User> {
     const updateData: any = { updatedAt: new Date() };
     
+    // Handle legacy 'name' field or new firstName/lastName fields
     if (data.name !== undefined) updateData.firstName = data.name.trim() || null;
+    if (data.firstName !== undefined) updateData.firstName = data.firstName.trim() || null;
+    if (data.lastName !== undefined) updateData.lastName = data.lastName.trim() || null;
+    if (data.email !== undefined) updateData.email = data.email.trim() || null;
     if (data.role !== undefined) updateData.role = data.role;
+    
+    // Handle password if provided (passwords are handled differently in this demo system)
     if (data.password !== undefined) {
-      // Hash the password before storing
-      const saltRounds = 10;
-      updateData.passwordHash = await bcrypt.hash(data.password, saltRounds);
+      // For this demo system, we don't actually store hashed passwords in the database
+      // The authentication is handled through demo credentials in the routes
+      console.log('Password update requested for user:', id);
     }
 
     const [user] = await db

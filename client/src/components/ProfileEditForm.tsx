@@ -69,7 +69,7 @@ export function ProfileEditForm() {
     if (lastName !== user?.lastName) {
       updateData.lastName = lastName;
     }
-    if (email !== user?.email) {
+    if (email !== user?.email && user?.role === 'manager') {
       updateData.email = email;
     }
     
@@ -118,7 +118,7 @@ export function ProfileEditForm() {
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium text-gray-600">Username</Label>
-                <div className="mt-1 text-sm text-gray-900">{user?.email}</div>
+                <div className="mt-1 text-sm text-gray-900">{user?.email || 'Not set'}</div>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-600">Role</Label>
@@ -160,17 +160,18 @@ export function ProfileEditForm() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="email">Email/Username</Label>
+                <Label htmlFor="email">Username</Label>
                 <Input
                   id="email"
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder="Enter your username"
                   className="mt-1"
+                  readOnly={user?.role !== 'manager'}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  This will be used for login and identification
+                  {user?.role === 'manager' ? 'This will be used for login and identification' : 'Only managers can change usernames'}
                 </p>
               </div>
               <Button 
