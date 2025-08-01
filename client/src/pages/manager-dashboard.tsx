@@ -122,7 +122,7 @@ export default function ManagerDashboard() {
               <span className="text-sm text-gray-600">
                 {user?.name ? `${user.name} / @${user.username}` : `@${user?.username}`}
               </span>
-              <Button variant="ghost" onClick={() => setShowProfileModal(true)} size="sm">
+              <Button variant="ghost" onClick={() => setActiveView("profile")} size="sm">
                 <User className="h-4 w-4" />
               </Button>
               <Button variant="ghost" onClick={logout} size="sm">

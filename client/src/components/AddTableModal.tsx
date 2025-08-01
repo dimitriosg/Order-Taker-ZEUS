@@ -32,10 +32,10 @@ export function AddTableModal({ open, onOpenChange, existingTables }: AddTableMo
       onOpenChange(false);
       setTableNumber("");
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Failed to create table",
-        description: "Please try again",
+        description: error.message || "Please try again",
         variant: "destructive",
       });
     },

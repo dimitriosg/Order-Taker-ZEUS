@@ -270,6 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const staff = users.map(user => ({
         id: user.id,
         username: user.username,
+        name: user.name,
         role: user.role,
         assignedTables: user.assignedTables
       }));
@@ -280,12 +281,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Table management routes
-  app.post('/api/tables', auth(['manager']), async (req: Request, res: Response) => {
+  app.get('/api/tables', auth(['manager', 'waiter', 'cashier']), async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const tables = await storage.getAllTables();
+      res.json(tables);
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/tables', auth(['manager']), async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { number } = req.body;
+      
+      if (!number || number <= 0) {
+        return res.status(400).json({ message: 'Valid table number is required' });
+      }
+
+      // Check if table already exists
+      const existingTables = await storage.getAllTables();
+      const tableExists = existingTables.some(table => table.number === number);
+      
+      if (tableExists) {
+        return res.status(400).json({ message: `Table ${number} already exists` });
+      }
+
       const table = await storage.createTable({ number, status: "free" });
       res.json(table);
     } catch (error) {
+      console.error('Table creation error:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
