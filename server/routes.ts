@@ -81,11 +81,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Broadcast to specific role
   const broadcastToRole = (role: string, message: any) => {
     const clients = clientsByRole.get(role);
+    console.log(`Broadcasting to ${role}: ${clients ? clients.size : 0} clients connected`);
     if (clients) {
       const messageStr = JSON.stringify(message);
       clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(messageStr);
+          console.log(`Sent message to ${role} client:`, message.type);
         }
       });
     }
@@ -820,6 +822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         previousStatus: previousStatus
       };
       
+      console.log('Broadcasting order status update:', message);
       broadcastToRole('waiter', message);
       broadcastToRole('cashier', message);
       broadcastToRole('manager', message);
