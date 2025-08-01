@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, ImageIcon, Tag, DollarSign } from "lucide-react";
+import { Plus, Edit, Trash2, ImageIcon, Tag, DollarSign, ArrowLeft, FolderPlus, Trash } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface MenuItem {
   id: string;
@@ -29,18 +30,23 @@ interface MenuItem {
 export default function MenuManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{type: 'all' | 'category', category?: string}>({type: 'all'});
 
   // Form state
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     price: "",
-    category: "",
+    category: "uncategorized",
     newCategory: "",
     available: true,
     sortOrder: 0,
@@ -147,6 +153,31 @@ export default function MenuManagement() {
     },
   });
 
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async ({ type, category }: {type: 'all' | 'category', category?: string}) => {
+      const itemsToDelete = type === 'all' 
+        ? menuItems 
+        : menuItems.filter(item => item.category === category);
+      
+      await Promise.all(itemsToDelete.map(item => 
+        apiRequest("DELETE", `/api/menu/${item.id}`)
+      ));
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/menu"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/menu/categories"] });
+      const description = variables.type === 'all' 
+        ? "All menu items have been deleted" 
+        : `All items in "${variables.category}" category have been deleted`;
+      toast({
+        title: "Bulk delete completed",
+        description,
+      });
+      setShowDeleteConfirmDialog(false);
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       name: "",
@@ -163,15 +194,7 @@ export default function MenuManagement() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const finalCategory = formData.newCategory.trim() || formData.category;
-    if (!finalCategory) {
-      toast({
-        title: "Error",
-        description: "Please select or enter a category",
-        variant: "destructive",
-      });
-      return;
-    }
+    const finalCategory = formData.newCategory.trim() || formData.category || "uncategorized";
 
     const submitData = {
       name: formData.name.trim(),
@@ -187,6 +210,45 @@ export default function MenuManagement() {
     } else {
       createItemMutation.mutate(submitData);
     }
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a category name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create a dummy item to establish the category, then delete it
+    // This is a workaround since categories are derived from items
+    const tempItem = {
+      name: `temp-${Date.now()}`,
+      price: 0,
+      category: newCategoryName.trim(),
+      available: false,
+      sortOrder: 999,
+    };
+
+    createItemMutation.mutate(tempItem, {
+      onSuccess: (createdItem: any) => {
+        // Immediately delete the temp item
+        deleteItemMutation.mutate(createdItem.id);
+        setNewCategoryName("");
+        setShowAddCategoryDialog(false);
+        toast({
+          title: "Category added",
+          description: `"${newCategoryName.trim()}" category is now available`,
+        });
+      }
+    });
+  };
+
+  const handleBulkDelete = (type: 'all' | 'category', category?: string) => {
+    setDeleteTarget({ type, category });
+    setShowDeleteConfirmDialog(true);
   };
 
   const startEdit = (item: MenuItem) => {
@@ -207,12 +269,21 @@ export default function MenuManagement() {
     ? menuItems 
     : menuItems.filter(item => item.category === selectedCategory);
 
+  // Add uncategorized to categories if there are items without explicit category
+  const allCategories = [...categories];
+  if (menuItems.some(item => !item.category || item.category === "uncategorized")) {
+    if (!allCategories.includes("uncategorized")) {
+      allCategories.unshift("uncategorized");
+    }
+  }
+
   // Group items by category for display
   const itemsByCategory = filteredItems.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
+    const category = item.category || "uncategorized";
+    if (!acc[category]) {
+      acc[category] = [];
     }
-    acc[item.category].push(item);
+    acc[category].push(item);
     return acc;
   }, {} as Record<string, MenuItem[]>);
 
@@ -224,18 +295,62 @@ export default function MenuManagement() {
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Menu Management</h1>
-          <p className="text-gray-600">Add, edit, and organize your restaurant menu</p>
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="outline"
+            onClick={() => setLocation('/manager')}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Admin Dashboard</span>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Menu Management</h1>
+            <p className="text-gray-600">Add, edit, and organize your restaurant menu</p>
+          </div>
         </div>
         
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Menu Item
-            </Button>
-          </DialogTrigger>
+        <div className="flex space-x-2">
+          <Dialog open={showAddCategoryDialog} onOpenChange={setShowAddCategoryDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <FolderPlus className="w-4 h-4 mr-2" />
+                Add Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Category</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="categoryName">Category Name</Label>
+                  <Input
+                    id="categoryName"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Enter category name"
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setShowAddCategoryDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddCategory}>
+                    Add Category
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Menu Item
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{editingItem ? "Edit Menu Item" : "Add New Menu Item"}</DialogTitle>
@@ -288,6 +403,7 @@ export default function MenuManagement() {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="uncategorized">Uncategorized</SelectItem>
                       {categories.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}
@@ -369,6 +485,16 @@ export default function MenuManagement() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <Button 
+          variant="destructive" 
+          onClick={() => handleBulkDelete('all')}
+          disabled={menuItems.length === 0}
+        >
+          <Trash className="w-4 h-4 mr-2" />
+          Delete All Items
+        </Button>
+        </div>
       </div>
 
       {/* Category Filter */}
@@ -385,8 +511,8 @@ export default function MenuManagement() {
           >
             All Categories ({menuItems.length})
           </Button>
-          {categories.map((category) => {
-            const count = menuItems.filter(item => item.category === category).length;
+          {allCategories.map((category) => {
+            const count = menuItems.filter(item => (item.category || "uncategorized") === category).length;
             return (
               <Button
                 key={category}
@@ -394,7 +520,7 @@ export default function MenuManagement() {
                 size="sm"
                 onClick={() => setSelectedCategory(category)}
               >
-                {category} ({count})
+                {category === "uncategorized" ? "Uncategorized" : category} ({count})
               </Button>
             );
           })}
@@ -409,12 +535,23 @@ export default function MenuManagement() {
           {Object.keys(itemsByCategory).sort().map((category) => (
             <Card key={category}>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Tag className="w-5 h-5 mr-2" />
-                  {category}
-                  <Badge variant="outline" className="ml-2">
-                    {itemsByCategory[category].length} items
-                  </Badge>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Tag className="w-5 h-5 mr-2" />
+                    {category === "uncategorized" ? "Uncategorized" : category}
+                    <Badge variant="outline" className="ml-2">
+                      {itemsByCategory[category].length} items
+                    </Badge>
+                  </div>
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => handleBulkDelete('category', category)}
+                    disabled={itemsByCategory[category].length === 0}
+                  >
+                    <Trash className="w-3 h-3 mr-1" />
+                    Delete All
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -500,6 +637,35 @@ export default function MenuManagement() {
           </CardContent>
         </Card>
       )}
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Bulk Delete</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              {deleteTarget.type === 'all' 
+                ? `Are you sure you want to delete all ${menuItems.length} menu items? This action cannot be undone.`
+                : `Are you sure you want to delete all ${menuItems.filter(item => item.category === deleteTarget.category).length} items in the "${deleteTarget.category}" category? This action cannot be undone.`
+              }
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowDeleteConfirmDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => bulkDeleteMutation.mutate(deleteTarget)}
+                disabled={bulkDeleteMutation.isPending}
+              >
+                {bulkDeleteMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
