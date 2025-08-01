@@ -241,126 +241,126 @@ export default function CashierDashboard() {
         <PasswordChangeReminder onChangePassword={() => setShowProfileModal(true)} />
         
         {/* Till and Order Summary - First Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Till Starting Amount</p>
-                <p className="text-2xl font-bold text-green-600">${tillStartAmount.toFixed(2)}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Till Starting Amount</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-600">${tillStartAmount.toFixed(2)}</p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
               </div>
             </div>
           </Card>
           
-          <Card className="p-4">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Order Value</p>
-                <p className="text-2xl font-bold text-blue-600">${totalOrderValue.toFixed(2)}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Total Order Value</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-600">${totalOrderValue.toFixed(2)}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Receipt className="w-6 h-6 text-blue-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Receipt className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
             </div>
           </Card>
           
-          <Card className="p-4">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Current Till Total</p>
-                <p className="text-2xl font-bold text-emerald-600">${currentTillTotal.toFixed(2)}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Current Till Total</p>
+                <p className="text-xl sm:text-2xl font-bold text-emerald-600">${currentTillTotal.toFixed(2)}</p>
               </div>
-              <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-emerald-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
               </div>
             </div>
           </Card>
           
-          <Card className="p-4">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Orders</p>
-                <p className="text-2xl font-bold text-purple-600">{totalOrdersReceived}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Total Orders</p>
+                <p className="text-xl sm:text-2xl font-bold text-purple-600">{totalOrdersReceived}</p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <Receipt className="w-6 h-6 text-purple-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <Receipt className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
               </div>
             </div>
           </Card>
         </div>
 
         {/* Order Status Summary - Second Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Receipt className="text-blue-600 text-xl" />
+                <div className="p-2 sm:p-3 bg-blue-100 rounded-lg">
+                  <Receipt className="text-blue-600 text-lg sm:text-xl" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">New Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.newOrders}</p>
+                <div className="ml-2 sm:ml-4">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">New Orders</p>
+                  <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.newOrders}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-amber-100 rounded-lg">
-                  <Clock className="text-amber-600 text-xl" />
+                <div className="p-2 sm:p-3 bg-amber-100 rounded-lg">
+                  <Clock className="text-amber-600 text-lg sm:text-xl" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">In Preparation</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.inPrep}</p>
+                <div className="ml-2 sm:ml-4">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">In Preparation</p>
+                  <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.inPrep}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <Check className="text-green-600 text-xl" />
+                <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+                  <Check className="text-green-600 text-lg sm:text-xl" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Ready</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.ready}</p>
+                <div className="ml-2 sm:ml-4">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Ready</p>
+                  <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.ready}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <ShoppingCart className="text-purple-600 text-xl" />
+                <div className="p-2 sm:p-3 bg-purple-100 rounded-lg">
+                  <ShoppingCart className="text-purple-600 text-lg sm:text-xl" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Active Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{activeOrders.length}</p>
+                <div className="ml-2 sm:ml-4">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Active Orders</p>
+                  <p className="text-lg sm:text-2xl font-bold text-gray-900">{activeOrders.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* New Orders */}
           <Card>
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+            <div className="p-4 sm:p-6 border-b border-gray-200">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                 <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
                 New Orders (Paid)
               </h2>
             </div>
             
-            <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
+            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-80 sm:max-h-96 overflow-y-auto">
               {sortedNewOrders.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">No new orders</p>
               ) : (
@@ -421,7 +421,7 @@ export default function CashierDashboard() {
                       </div>
                       
                       <Button
-                        className="w-full bg-amber-500 hover:bg-amber-600"
+                        className="w-full bg-amber-500 hover:bg-amber-600 min-h-[44px] text-sm sm:text-base"
                         onClick={() => updateStatusMutation.mutate({
                           orderId: order.id,
                           status: "in-prep"

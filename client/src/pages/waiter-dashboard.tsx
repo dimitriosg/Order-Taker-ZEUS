@@ -420,23 +420,24 @@ export default function WaiterDashboard() {
                   return (
                     <Card
                       key={table.id}
-                      className={`cursor-pointer hover:shadow-md transition-shadow border-2 ${
-                        color === "green" ? "border-green-200" :
-                        color === "amber" ? "border-amber-200" : "border-red-200"
+                      className={`cursor-pointer hover:shadow-md active:scale-95 transition-all duration-150 border-2 min-h-[120px] sm:min-h-[140px] ${
+                        color === "green" ? "border-green-200 hover:border-green-300" :
+                        color === "amber" ? "border-amber-200 hover:border-amber-300" : 
+                        "border-red-200 hover:border-red-300"
                       }`}
                       onClick={() => handleTableSelect(table.number)}
                     >
-                      <CardContent className="p-3 sm:p-6 text-center">
-                        <div className={`w-8 h-8 sm:w-12 sm:h-12 ${
+                      <CardContent className="p-3 sm:p-6 text-center h-full flex flex-col justify-center">
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 ${
                           color === "green" ? "bg-green-100" :
                           color === "amber" ? "bg-amber-100" : "bg-red-100"
-                        } rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3`}>
+                        } rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-3`}>
                           {status === "ready" ? (
-                            <Utensils className={`text-red-600 h-3 w-3 sm:h-5 sm:w-5`} />
+                            <Utensils className={`text-red-600 h-4 w-4 sm:h-5 sm:w-5`} />
                           ) : status === "occupied" ? (
-                            <Clock className={`text-amber-600 h-3 w-3 sm:h-5 sm:w-5`} />
+                            <Clock className={`text-amber-600 h-4 w-4 sm:h-5 sm:w-5`} />
                           ) : (
-                            <Check className={`text-green-600 h-3 w-3 sm:h-5 sm:w-5`} />
+                            <Check className={`text-green-600 h-4 w-4 sm:h-5 sm:w-5`} />
                           )}
                         </div>
                         {editingTableId === table.id ? (
@@ -487,7 +488,7 @@ export default function WaiterDashboard() {
                             </Button>
                           </div>
                         )}
-                        <p className={`text-sm ${
+                        <p className={`text-xs sm:text-sm font-medium ${
                           color === "green" ? "text-green-600" :
                           color === "amber" ? "text-amber-600" : "text-red-600"
                         }`}>
@@ -534,10 +535,10 @@ export default function WaiterDashboard() {
 
           {activeView === "orders" && (
             <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Active Orders</h2>
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Active Orders</h2>
                 <Button
-                  className="lg:hidden"
+                  className="lg:hidden text-xs sm:text-sm px-3 py-2"
                   onClick={() => setActiveView("tables")}
                   variant="outline"
                 >
@@ -554,18 +555,18 @@ export default function WaiterDashboard() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {activeOrders.map((order) => (
                     <Card key={order.id} className={`order-card-enter ${
-                      order.status === "ready" ? "order-card-ready" :
-                      order.status === "in-prep" ? "order-card-in-prep" : ""
+                      order.status === "ready" ? "order-card-ready border-2 border-red-200" :
+                      order.status === "in-prep" ? "order-card-in-prep border-2 border-amber-200" : ""
                     }`}>
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start mb-4">
+                      <CardContent className="p-4 sm:p-6">
+                        <div className="flex justify-between items-start mb-3 sm:mb-4">
                           <div>
-                            <h4 className="font-semibold text-gray-900">Table {order.tableNumber}</h4>
-                            <p className="text-sm text-gray-600">
-                              Order #{order.id.slice(-6)} - {new Date(order.createdAt).toLocaleTimeString()}
+                            <h4 className="font-semibold text-gray-900 text-base sm:text-lg">Table {order.tableNumber}</h4>
+                            <p className="text-xs sm:text-sm text-gray-600">
+                              Order #{order.id.slice(-6)} - {new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                             </p>
                           </div>
                           <OrderStatusBadge status={order.status} animated={true} />
@@ -585,13 +586,13 @@ export default function WaiterDashboard() {
                           <OrderStatusProgress currentStatus={order.status} animated={true} />
                         </div>
                         
-                        <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                          <span className="font-semibold">Cash: ${order.cashReceived}</span>
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center pt-3 sm:pt-4 border-t border-gray-200 gap-2 sm:gap-0">
+                          <span className="font-semibold text-sm sm:text-base">Cash: ${order.cashReceived}</span>
                           {order.status === "ready" && (
                             <Button
                               onClick={() => markServedMutation.mutate(order.id)}
                               disabled={markServedMutation.isPending}
-                              className="bg-emerald-600 hover:bg-emerald-700"
+                              className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto min-h-[44px] text-sm sm:text-base"
                             >
                               {markServedMutation.isPending ? "Marking..." : "Mark as Served"}
                             </Button>

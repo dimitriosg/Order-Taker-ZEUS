@@ -43,8 +43,8 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
-  // Auth middleware - temporarily disabled for testing
-  // await setupAuth(app);
+  // Auth middleware - re-enable for authentication
+  await setupAuth(app);
   
   // Serve uploaded files statically
   app.use('/uploads', express.static(uploadsDir, {

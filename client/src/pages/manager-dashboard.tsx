@@ -664,12 +664,12 @@ export default function ManagerDashboard() {
           
           {activeView === "overview" && (
             <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Daily Overview</h2>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Daily Overview</h2>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Currency:</span>
+                  <span className="text-xs sm:text-sm text-gray-600">Currency:</span>
                   <Select value={currency} onValueChange={setCurrency}>
-                    <SelectTrigger className="w-24">
+                    <SelectTrigger className="w-20 sm:w-24 text-xs sm:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -682,71 +682,71 @@ export default function ManagerDashboard() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handleMetricClick('revenue')}>
-                  <CardContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+                <Card className="cursor-pointer hover:bg-gray-50 active:scale-95 transition-all duration-150" onClick={() => handleMetricClick('revenue')}>
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <div className="p-3 bg-green-100 rounded-lg">
-                          <DollarSign className="text-green-600 text-xl" />
+                        <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+                          <DollarSign className="text-green-600 text-lg sm:text-xl" />
                         </div>
-                        <div className="ml-4">
-                          <p className="text-sm font-medium text-gray-600">Today's Revenue</p>
-                          <p className="text-2xl font-bold text-gray-900">{currencySymbols[currency as keyof typeof currencySymbols]}{todayStats.revenue}</p>
+                        <div className="ml-3 sm:ml-4">
+                          <p className="text-xs sm:text-sm font-medium text-gray-600">Today's Revenue</p>
+                          <p className="text-lg sm:text-2xl font-bold text-gray-900">{currencySymbols[currency as keyof typeof currencySymbols]}{todayStats.revenue}</p>
                         </div>
                       </div>
-                      <TrendingUp className="text-gray-400 w-4 h-4" />
+                      <TrendingUp className="text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
                   </CardContent>
                 </Card>
                 
-                <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handleMetricClick('orders')}>
-                  <CardContent className="p-6">
+                <Card className="cursor-pointer hover:bg-gray-50 active:scale-95 transition-all duration-150" onClick={() => handleMetricClick('orders')}>
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <div className="p-3 bg-blue-100 rounded-lg">
-                          <BarChart3 className="text-blue-600 text-xl" />
+                        <div className="p-2 sm:p-3 bg-blue-100 rounded-lg">
+                          <BarChart3 className="text-blue-600 text-lg sm:text-xl" />
                         </div>
-                        <div className="ml-4">
-                          <p className="text-sm font-medium text-gray-600">Orders Completed</p>
-                          <p className="text-2xl font-bold text-gray-900">{todayStats.ordersCompleted}</p>
+                        <div className="ml-3 sm:ml-4">
+                          <p className="text-xs sm:text-sm font-medium text-gray-600">Orders Completed</p>
+                          <p className="text-lg sm:text-2xl font-bold text-gray-900">{todayStats.ordersCompleted}</p>
                         </div>
                       </div>
-                      <TrendingUp className="text-gray-400 w-4 h-4" />
+                      <TrendingUp className="text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
                   </CardContent>
                 </Card>
                 
-                <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handleMetricClick('tables')}>
-                  <CardContent className="p-6">
+                <Card className="cursor-pointer hover:bg-gray-50 active:scale-95 transition-all duration-150" onClick={() => handleMetricClick('tables')}>
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <div className="p-3 bg-amber-100 rounded-lg">
-                          <Table className="text-amber-600 text-xl" />
+                        <div className="p-2 sm:p-3 bg-amber-100 rounded-lg">
+                          <Table className="text-amber-600 text-lg sm:text-xl" />
                         </div>
-                        <div className="ml-4">
-                          <p className="text-sm font-medium text-gray-600">Active Tables</p>
-                          <p className="text-2xl font-bold text-gray-900">{todayStats.activeTables}</p>
+                        <div className="ml-3 sm:ml-4">
+                          <p className="text-xs sm:text-sm font-medium text-gray-600">Active Tables</p>
+                          <p className="text-lg sm:text-2xl font-bold text-gray-900">{todayStats.activeTables}</p>
                         </div>
                       </div>
-                      <TrendingUp className="text-gray-400 w-4 h-4" />
+                      <TrendingUp className="text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
                   </CardContent>
                 </Card>
                 
-                <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handleMetricClick('staff')}>
-                  <CardContent className="p-6">
+                <Card className="cursor-pointer hover:bg-gray-50 active:scale-95 transition-all duration-150" onClick={() => handleMetricClick('staff')}>
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <div className="p-3 bg-purple-100 rounded-lg">
-                          <Users className="text-purple-600 text-xl" />
+                        <div className="p-2 sm:p-3 bg-purple-100 rounded-lg">
+                          <Users className="text-purple-600 text-lg sm:text-xl" />
                         </div>
-                        <div className="ml-4">
-                          <p className="text-sm font-medium text-gray-600">Active Staff</p>
-                          <p className="text-2xl font-bold text-gray-900">{todayStats.activeStaff}</p>
+                        <div className="ml-3 sm:ml-4">
+                          <p className="text-xs sm:text-sm font-medium text-gray-600">Active Staff</p>
+                          <p className="text-lg sm:text-2xl font-bold text-gray-900">{todayStats.activeStaff}</p>
                         </div>
                       </div>
-                      <TrendingUp className="text-gray-400 w-4 h-4" />
+                      <TrendingUp className="text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
                   </CardContent>
                 </Card>
