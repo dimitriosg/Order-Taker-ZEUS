@@ -19,6 +19,12 @@ interface Order {
   waiterId: string;
   cashReceived: number;
   createdAt: string;
+  waiter?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+  };
   items: Array<{
     id: string;
     menuItemId: string;
@@ -57,14 +63,25 @@ export default function CashierDashboard() {
     queryKey: ["/api/orders/status/ready"],
   });
 
-  // Calculate total cash received today
-  const allOrders = [...newOrders, ...inPrepOrders, ...readyOrders];
-  const totalCashReceived = allOrders.reduce((total, order) => total + (order.cashReceived || 0), 0);
-  const totalOrderValue = allOrders.reduce((total, order) => 
+  // Fetch all orders for total statistics
+  const { data: allOrdersData = [] } = useQuery<Order[]>({
+    queryKey: ["/api/orders"],
+  });
+
+  // Sort orders by creation time (oldest first)
+  const sortedNewOrders = [...newOrders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const sortedInPrepOrders = [...inPrepOrders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const sortedReadyOrders = [...readyOrders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  // Calculate statistics
+  const activeOrders = [...newOrders, ...inPrepOrders, ...readyOrders];
+  const totalCashReceived = allOrdersData.reduce((total, order) => total + (order.cashReceived || 0), 0);
+  const totalOrderValue = allOrdersData.reduce((total, order) => 
     total + (order.items || []).reduce((orderTotal, item) => 
       orderTotal + ((item.menuItem?.price || 0) * item.quantity), 0
     ), 0
   );
+  const totalOrdersReceived = allOrdersData.length;
 
   // Update order status mutation
   const updateStatusMutation = useMutation({
@@ -211,7 +228,7 @@ export default function CashierDashboard() {
 
         {/* Order Columns */}
         {/* Cash Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -240,10 +257,22 @@ export default function CashierDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Active Orders</p>
-                <p className="text-2xl font-bold text-amber-600">{allOrders.length}</p>
+                <p className="text-2xl font-bold text-amber-600">{activeOrders.length}</p>
               </div>
               <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
                 <ShoppingCart className="w-6 h-6 text-amber-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Orders</p>
+                <p className="text-2xl font-bold text-purple-600">{totalOrdersReceived}</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <Receipt className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </Card>
