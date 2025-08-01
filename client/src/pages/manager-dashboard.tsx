@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User, Download, TrendingUp, Clock, DollarSign, Settings, Receipt, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { AddStaffModal } from "@/components/AddStaffModal";
 import { AddTableModal } from "@/components/AddTableModal";
@@ -440,9 +441,17 @@ export default function ManagerDashboard() {
               <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Admin Dashboard</h1>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <span className="hidden sm:block text-sm text-gray-600">
-                {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email || 'Manager'}
-              </span>
+              <div className="flex items-center space-x-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.profileImageUrl || undefined} />
+                  <AvatarFallback className="text-xs">
+                    {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'M'}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden sm:block text-sm text-gray-600">
+                  {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email || 'Manager'}
+                </span>
+              </div>
               <Button 
                 variant="ghost" 
                 onClick={() => setActiveView("profile")} 

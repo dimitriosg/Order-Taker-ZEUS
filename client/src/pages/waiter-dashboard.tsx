@@ -6,6 +6,7 @@ import LogoutConfirmModal from "@/components/LogoutConfirmModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Utensils, Receipt, Menu, LogOut, Check, Clock, Plus, User, Edit } from "lucide-react";
 import { NewOrderModal } from "@/components/NewOrderModal";
 import { ProfileModal } from "@/components/ProfileModal";
@@ -302,9 +303,17 @@ export default function WaiterDashboard() {
               <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Waiter Dashboard</h1>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <span className="hidden sm:block text-sm text-gray-600">
-                {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Waiter'}
-              </span>
+              <div className="flex items-center space-x-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.profileImageUrl || undefined} />
+                  <AvatarFallback className="text-xs">
+                    {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'W'}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden sm:block text-sm text-gray-600">
+                  {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Waiter'}
+                </span>
+              </div>
               <Button variant="ghost" onClick={() => setShowProfileModal(true)} size="sm">
                 <User className="h-4 w-4" />
               </Button>

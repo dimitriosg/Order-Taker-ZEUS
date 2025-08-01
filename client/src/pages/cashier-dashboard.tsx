@@ -6,6 +6,7 @@ import LogoutConfirmModal from "@/components/LogoutConfirmModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -211,9 +212,17 @@ export default function CashierDashboard() {
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm text-green-700">Live</span>
               </div>
-              <span className="hidden sm:block text-sm text-gray-600">
-                {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Cashier'}
-              </span>
+              <div className="flex items-center space-x-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.profileImageUrl || undefined} />
+                  <AvatarFallback className="text-xs">
+                    {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'C'}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden sm:block text-sm text-gray-600">
+                  {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Cashier'}
+                </span>
+              </div>
               <Button variant="ghost" onClick={() => setShowTillModal(true)} size="sm">
                 <Settings className="h-4 w-4" />
               </Button>

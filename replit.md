@@ -10,6 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Profile Picture Upload Feature (January 2025)
+- **Complete Upload System**: Implemented profile picture upload with preview functionality using multer backend
+- **Image Validation**: Added file type and 5MB size limit validation with proper error handling
+- **Real-time Preview**: Users see selected images immediately before uploading
+- **Header Integration**: Profile pictures now appear as thumbnails in dashboard headers
+- **Storage System**: Images saved to uploads folder and served statically with proper caching
+
 ### Profile Editing Enhancement (January 2025)
 - **Real-time Profile Updates**: Fixed authentication endpoint to fetch actual user data from database instead of mock data
 - **Enhanced Profile Fields**: Added support for firstName, lastName, and email/username editing
