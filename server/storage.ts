@@ -1,5 +1,8 @@
-import { type User, type InsertUser, type Table, type InsertTable, type MenuItem, type InsertMenuItem, type Order, type InsertOrder, type OrderItem, type InsertOrderItem } from "@shared/schema";
+import { type User, type InsertUser, type Table, type InsertTable, type MenuItem, type InsertMenuItem, type Order, type InsertOrder, type OrderItem, type InsertOrderItem, users, tables, menuItems, orders, orderItems } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export interface IStorage {
   // Users
@@ -253,4 +256,205 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async updateUserTables(userId: string, assignedTables: number[]): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ assignedTables })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async getAllTables(): Promise<Table[]> {
+    return await db.select().from(tables).orderBy(tables.number);
+  }
+
+  async createTable(insertTable: InsertTable): Promise<Table> {
+    const [table] = await db
+      .insert(tables)
+      .values(insertTable)
+      .returning();
+    return table;
+  }
+
+  async updateTableStatus(tableNumber: number, status: "free" | "occupied"): Promise<Table> {
+    const [table] = await db
+      .update(tables)
+      .set({ status })
+      .where(eq(tables.number, tableNumber))
+      .returning();
+    return table;
+  }
+
+  async getAllMenuItems(): Promise<MenuItem[]> {
+    return await db.select().from(menuItems);
+  }
+
+  async getMenuItemsByCategory(category: string): Promise<MenuItem[]> {
+    return await db.select().from(menuItems).where(eq(menuItems.category, category));
+  }
+
+  async createMenuItem(insertItem: InsertMenuItem): Promise<MenuItem> {
+    const [item] = await db
+      .insert(menuItems)
+      .values(insertItem)
+      .returning();
+    return item;
+  }
+
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const [order] = await db
+      .insert(orders)
+      .values(insertOrder)
+      .returning();
+    return order;
+  }
+
+  async getOrderById(id: string): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order || undefined;
+  }
+
+  async getOrdersByStatus(status: "paid" | "in-prep" | "ready" | "served"): Promise<Order[]> {
+    return await db.select().from(orders).where(eq(orders.status, status));
+  }
+
+  async updateOrderStatus(id: string, status: "paid" | "in-prep" | "ready" | "served", cashierId?: string): Promise<Order> {
+    const updateData: any = { status };
+    if (cashierId) updateData.cashierId = cashierId;
+    
+    const [order] = await db
+      .update(orders)
+      .set(updateData)
+      .where(eq(orders.id, id))
+      .returning();
+    return order;
+  }
+
+  async getOrdersByWaiter(waiterId: string): Promise<Order[]> {
+    return await db.select().from(orders).where(eq(orders.waiterId, waiterId));
+  }
+
+  async createOrderItem(insertItem: InsertOrderItem): Promise<OrderItem> {
+    const [item] = await db
+      .insert(orderItems)
+      .values(insertItem)
+      .returning();
+    return item;
+  }
+
+  async getOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
+    return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  }
+}
+
+// Initialize database storage and seed data
+const initializeDatabase = async () => {
+  const dbStorage = new DatabaseStorage();
+  
+  // Check if we already have users (to avoid duplicate seeding)
+  const existingUsers = await dbStorage.getAllUsers();
+  if (existingUsers.length > 0) {
+    return dbStorage;
+  }
+
+  // Seed initial data
+  const hashedPassword = await bcrypt.hash("password", 10);
+  
+  // Create users
+  await dbStorage.createUser({
+    username: "manager",
+    password: hashedPassword,
+    role: "manager",
+  });
+  
+  await dbStorage.createUser({
+    username: "waiter",
+    password: hashedPassword,
+    role: "waiter",
+  });
+  
+  await dbStorage.createUser({
+    username: "cashier",
+    password: hashedPassword,
+    role: "cashier",
+  });
+
+  // Create tables
+  for (let i = 1; i <= 10; i++) {
+    await dbStorage.createTable({
+      number: i,
+      status: "free",
+    });
+  }
+
+  // Create menu items
+  const menuItemsData = [
+    {
+      name: "Grilled Chicken Breast",
+      description: "Served with seasonal vegetables and rice pilaf",
+      price: 18.00,
+      category: "Main Course",
+      image: null,
+    },
+    {
+      name: "Caesar Salad",
+      description: "Fresh romaine lettuce with parmesan and croutons",
+      price: 12.00,
+      category: "Appetizers",
+      image: null,
+    },
+    {
+      name: "Salmon Fillet",
+      description: "Pan-seared salmon with lemon butter sauce",
+      price: 24.00,
+      category: "Main Course",
+      image: null,
+    },
+    {
+      name: "Pasta Carbonara",
+      description: "Classic Italian pasta with pancetta and parmesan",
+      price: 16.00,
+      category: "Main Course",
+      image: null,
+    },
+    {
+      name: "Tiramisu",
+      description: "Traditional Italian dessert with coffee and mascarpone",
+      price: 8.00,
+      category: "Desserts",
+      image: null,
+    },
+  ];
+
+  for (const item of menuItemsData) {
+    await dbStorage.createMenuItem(item);
+  }
+
+  return dbStorage;
+};
+
+export const storage = await initializeDatabase();

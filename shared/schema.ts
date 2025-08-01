@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, integer, boolean, timestamp, real, pgEnum } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -70,6 +71,41 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
 export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
   id: true,
 });
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  ordersAsWaiter: many(orders, { relationName: "waiter" }),
+  ordersAsCashier: many(orders, { relationName: "cashier" }),
+}));
+
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  waiter: one(users, { 
+    fields: [orders.waiterId], 
+    references: [users.id],
+    relationName: "waiter"
+  }),
+  cashier: one(users, { 
+    fields: [orders.cashierId], 
+    references: [users.id],
+    relationName: "cashier"
+  }),
+  items: many(orderItems),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, { 
+    fields: [orderItems.orderId], 
+    references: [orders.id] 
+  }),
+  menuItem: one(menuItems, { 
+    fields: [orderItems.menuItemId], 
+    references: [menuItems.id] 
+  }),
+}));
+
+export const menuItemsRelations = relations(menuItems, ({ many }) => ({
+  orderItems: many(orderItems),
+}));
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
