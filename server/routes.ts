@@ -288,27 +288,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register new staff member
   app.post('/api/register', async (req, res) => {
     try {
-      const { username, password, role } = req.body;
+      const { username, firstName, lastName, role } = req.body;
       
-      if (!username || !password || !role) {
-        return res.status(400).json({ message: 'Username, password, and role are required' });
+      if (!username || !firstName || !role) {
+        return res.status(400).json({ message: 'Username, first name, and role are required' });
       }
 
       if (!['waiter', 'cashier', 'manager'].includes(role)) {
         return res.status(400).json({ message: 'Invalid role' });
       }
 
-      // Check if user already exists
+      // Check if user already exists (using email field to store username)
       const existingUser = await storage.getUserByEmail(username);
       if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+        return res.status(400).json({ message: 'Username already exists' });
       }
 
       // Create new staff member with no assigned tables for waiters
       const newStaff = await storage.createUser({
-        email: username,
-        firstName: null,
-        lastName: null,
+        email: username, // Store username in email field for compatibility
+        firstName,
+        lastName,
         profileImageUrl: null,
         role: role as "waiter" | "cashier" | "manager",
         assignedTables: role === 'waiter' ? [] : null

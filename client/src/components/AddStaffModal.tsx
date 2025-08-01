@@ -13,7 +13,7 @@ interface AddStaffModalProps {
 }
 
 export function AddStaffModal({ onClose }: AddStaffModalProps) {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [role, setRole] = useState("");
@@ -21,12 +21,8 @@ export function AddStaffModal({ onClose }: AddStaffModalProps) {
   const { toast } = useToast();
 
   const createStaffMutation = useMutation({
-    mutationFn: async (staffData: { username: string; password: string; role: string }) => {
-      const response = await apiRequest("POST", "/api/register", {
-        username: staffData.username, // Map email to username for compatibility
-        password: "defaultPassword123", // Default password
-        role: staffData.role
-      });
+    mutationFn: async (staffData: { username: string; firstName: string; lastName: string; role: string }) => {
+      const response = await apiRequest("POST", "/api/register", staffData);
       return response.json();
     },
     onSuccess: () => {
@@ -49,18 +45,19 @@ export function AddStaffModal({ onClose }: AddStaffModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !firstName || !role) {
+    if (!username || !firstName || !role) {
       toast({
         title: "Missing fields",
-        description: "Please fill in email, first name, and role",
+        description: "Please fill in username, first name, and role",
         variant: "destructive",
       });
       return;
     }
 
     createStaffMutation.mutate({ 
-      username: email, // Use email as username
-      password: "defaultPassword123", // Default password
+      username,
+      firstName,
+      lastName,
       role 
     });
   };
@@ -76,15 +73,15 @@ export function AddStaffModal({ onClose }: AddStaffModalProps) {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="staffEmail" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+            <Label htmlFor="staffUsername" className="block text-sm font-medium text-gray-700 mb-1">
+              Username
             </Label>
             <Input
-              id="staffEmail"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter email address"
+              id="staffUsername"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter username"
               required
             />
           </div>
