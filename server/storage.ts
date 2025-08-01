@@ -39,6 +39,9 @@ export interface IStorage {
   getAllMenuItems(): Promise<MenuItem[]>;
   getMenuItemsByCategory(category: string): Promise<MenuItem[]>;
   createMenuItem(item: InsertMenuItem): Promise<MenuItem>;
+  updateMenuItem(id: string, updates: Partial<InsertMenuItem>): Promise<MenuItem>;
+  deleteMenuItem(id: string): Promise<void>;
+  getCategories(): Promise<string[]>;
 
   // Orders
   createOrder(order: InsertOrder): Promise<Order>;
@@ -170,6 +173,29 @@ export class DatabaseStorage implements IStorage {
       .values(insertItem)
       .returning();
     return item;
+  }
+
+  async updateMenuItem(id: string, updates: Partial<InsertMenuItem>): Promise<MenuItem> {
+    const [item] = await db
+      .update(menuItems)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(menuItems.id, id))
+      .returning();
+    return item;
+  }
+
+  async deleteMenuItem(id: string): Promise<void> {
+    await db
+      .delete(menuItems)
+      .where(eq(menuItems.id, id));
+  }
+
+  async getCategories(): Promise<string[]> {
+    const results = await db
+      .selectDistinct({ category: menuItems.category })
+      .from(menuItems)
+      .orderBy(menuItems.category);
+    return results.map(r => r.category);
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {

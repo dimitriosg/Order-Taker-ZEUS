@@ -261,6 +261,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get menu categories
+  app.get('/api/menu/categories', async (req, res) => {
+    try {
+      const categories = await storage.getCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Create menu item (admin only)
+  app.post('/api/menu', async (req, res) => {
+    try {
+      const validatedData = insertMenuItemSchema.parse(req.body);
+      const item = await storage.createMenuItem(validatedData);
+      res.status(201).json(item);
+    } catch (error) {
+      console.error("Error creating menu item:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Update menu item (admin only)
+  app.patch('/api/menu/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const item = await storage.updateMenuItem(id, updates);
+      res.json(item);
+    } catch (error) {
+      console.error("Error updating menu item:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Delete menu item (admin only)
+  app.delete('/api/menu/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteMenuItem(id);
+      res.json({ message: 'Menu item deleted successfully' });
+    } catch (error) {
+      console.error("Error deleting menu item:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Table routes
   app.get('/api/tables', async (req, res) => {
     try {

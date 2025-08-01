@@ -67,7 +67,12 @@ export function NewOrderModal({ tableNumber, onClose }: NewOrderModalProps) {
     },
   });
 
-  const categories = Array.from(new Set(menuItems.map(item => item.category)));
+  // Fetch categories from API
+  const { data: categoriesFromAPI = [] } = useQuery<string[]>({
+    queryKey: ["/api/menu/categories"],
+  });
+
+  const categories = categoriesFromAPI.length > 0 ? categoriesFromAPI : Array.from(new Set(menuItems.map(item => item.category)));
 
   const addToOrder = (menuItem: MenuItem) => {
     const existingItem = orderItems.find(item => item.menuItemId === menuItem.id);

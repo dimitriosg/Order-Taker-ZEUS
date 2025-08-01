@@ -423,6 +423,15 @@ export default function ManagerDashboard() {
             <Button
               variant="ghost"
               className="w-full justify-start"
+              onClick={() => window.location.href = "/menu-management"}
+            >
+              <Menu className="mr-3 h-4 w-4" />
+              Menu Management
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
               onClick={() => setShowImpersonateModal(true)}
             >
               <Settings className="mr-3 h-4 w-4" />

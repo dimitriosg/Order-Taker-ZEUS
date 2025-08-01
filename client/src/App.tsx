@@ -11,6 +11,7 @@ import { Landing } from "@/pages/landing";
 import WaiterDashboard from "@/pages/waiter-dashboard";
 import CashierDashboard from "@/pages/cashier-dashboard";
 import ManagerDashboard from "@/pages/manager-dashboard";
+import MenuManagement from "@/pages/menu-management";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -58,6 +59,10 @@ function Router() {
       
       <Route path="/manager">
         <ManagerDashboard />
+      </Route>
+      
+      <Route path="/menu-management">
+        <MenuManagement />
       </Route>
       
       <Route path="/">

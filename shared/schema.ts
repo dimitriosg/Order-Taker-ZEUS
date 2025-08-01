@@ -47,6 +47,10 @@ export const menuItems = pgTable("menu_items", {
   price: real("price").notNull(),
   category: text("category").notNull(),
   image: text("image"),
+  available: boolean("available").notNull().default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
 });
 
 export const orders = pgTable("orders", {
