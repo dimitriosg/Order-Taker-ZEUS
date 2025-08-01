@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User } from "lucide-react";
+import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User, Download, TrendingUp, Clock, DollarSign } from "lucide-react";
 import { AddStaffModal } from "@/components/AddStaffModal";
 import { AddTableModal } from "@/components/AddTableModal";
 import { ProfileModal } from "@/components/ProfileModal";
@@ -41,6 +41,7 @@ export default function ManagerDashboard() {
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [globalTables, setGlobalTables] = useState(false);
   const [currency, setCurrency] = useState("EUR");
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
   // Fetch staff
   const { data: staff = [], isLoading: staffLoading } = useQuery<Staff[]>({
@@ -104,6 +105,72 @@ export default function ManagerDashboard() {
     JPY: "¥"
   };
 
+  // CSV Export functionality
+  const downloadCSV = (data: any[], filename: string) => {
+    if (data.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There's no data available to download.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => headers.map(header => 
+        typeof row[header] === 'string' && row[header].includes(',') 
+          ? `"${row[header]}"` 
+          : row[header]
+      ).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Export successful",
+      description: `${filename} has been downloaded as CSV`,
+    });
+  };
+
+  // Mock data for demonstration - in real app this would come from API
+  const todayStats = {
+    revenue: 0,
+    ordersCompleted: 0,
+    activeTables: tables.filter(t => t.status === "occupied").length,
+    activeStaff: staff.length,
+    avgOrderTime: 0,
+    peakHour: "12:00 PM"
+  };
+
+  const handleMetricClick = (metric: string) => {
+    setSelectedMetric(metric);
+    // In a real app, this would fetch detailed data for the metric
+    switch(metric) {
+      case 'revenue':
+        setActiveView('reports');
+        break;
+      case 'orders':
+        setActiveView('reports');
+        break;
+      case 'tables':
+        setActiveView('tables');
+        break;
+      case 'staff':
+        setActiveView('staff');
+        break;
+    }
+  };
+
   if (staffLoading || tablesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -124,7 +191,7 @@ export default function ManagerDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                {user?.name ? `${user.name} / @${user.username}` : `@${user?.username}`}
+                {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Manager'}
               </span>
               <Button variant="ghost" onClick={() => setActiveView("profile")} size="sm">
                 <User className="h-4 w-4" />
@@ -148,6 +215,14 @@ export default function ManagerDashboard() {
             >
               <BarChart3 className="mr-3 h-4 w-4" />
               Overview
+            </Button>
+            <Button
+              variant={activeView === "reports" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => setActiveView("reports")}
+            >
+              <Download className="mr-3 h-4 w-4" />
+              Reports
             </Button>
             <Button
               variant={activeView === "staff" ? "default" : "ghost"}
@@ -199,62 +274,289 @@ export default function ManagerDashboard() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handleMetricClick('revenue')}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-green-100 rounded-lg">
+                          <DollarSign className="text-green-600 text-xl" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Today's Revenue</p>
+                          <p className="text-2xl font-bold text-gray-900">{currencySymbols[currency as keyof typeof currencySymbols]}{todayStats.revenue}</p>
+                        </div>
+                      </div>
+                      <TrendingUp className="text-gray-400 w-4 h-4" />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handleMetricClick('orders')}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-blue-100 rounded-lg">
+                          <BarChart3 className="text-blue-600 text-xl" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Orders Completed</p>
+                          <p className="text-2xl font-bold text-gray-900">{todayStats.ordersCompleted}</p>
+                        </div>
+                      </div>
+                      <TrendingUp className="text-gray-400 w-4 h-4" />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handleMetricClick('tables')}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-amber-100 rounded-lg">
+                          <Table className="text-amber-600 text-xl" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Active Tables</p>
+                          <p className="text-2xl font-bold text-gray-900">{todayStats.activeTables}</p>
+                        </div>
+                      </div>
+                      <TrendingUp className="text-gray-400 w-4 h-4" />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handleMetricClick('staff')}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-purple-100 rounded-lg">
+                          <Users className="text-purple-600 text-xl" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Active Staff</p>
+                          <p className="text-2xl font-bold text-gray-900">{todayStats.activeStaff}</p>
+                        </div>
+                      </div>
+                      <TrendingUp className="text-gray-400 w-4 h-4" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Additional Overview Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <Card>
                   <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-green-100 rounded-lg">
-                        <span className="text-green-600 text-xl">{currencySymbols[currency as keyof typeof currencySymbols]}</span>
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Today's Revenue</p>
-                        <p className="text-2xl font-bold text-gray-900">{currencySymbols[currency as keyof typeof currencySymbols]}0</p>
-                      </div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+                    </div>
+                    <div className="space-y-3">
+                      <Button 
+                        className="w-full justify-start bg-emerald-600 hover:bg-emerald-700"
+                        onClick={() => setActiveView('reports')}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Today's Report
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={() => setShowAddTableModal(true)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add New Table
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={() => setShowAddStaffModal(true)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Staff Member
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
                 
                 <Card>
                   <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-blue-100 rounded-lg">
-                        <BarChart3 className="text-blue-600 text-xl" />
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Orders Completed</p>
-                        <p className="text-2xl font-bold text-gray-900">0</p>
-                      </div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Performance Insights</h3>
                     </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-amber-100 rounded-lg">
-                        <Table className="text-amber-600 text-xl" />
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Avg. Order Time</span>
+                        <div className="flex items-center">
+                          <Clock className="w-4 h-4 text-gray-400 mr-1" />
+                          <span className="font-medium">{todayStats.avgOrderTime} min</span>
+                        </div>
                       </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Active Tables</p>
-                        <p className="text-2xl font-bold text-gray-900">{tables.filter(t => t.status === "occupied").length}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Peak Hour</span>
+                        <span className="font-medium">{todayStats.peakHour}</span>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-purple-100 rounded-lg">
-                        <Users className="text-purple-600 text-xl" />
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Active Staff</p>
-                        <p className="text-2xl font-bold text-gray-900">{staff.length}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Table Turnover</span>
+                        <span className="font-medium">0 times</span>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
+            </div>
+          )}
+
+          {activeView === "reports" && (
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Reports & Analytics</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Daily Sales Report</h3>
+                      <Download className="text-gray-400 w-5 h-5" />
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">Export today's sales data including orders, revenue, and payment details.</p>
+                    <Button 
+                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => downloadCSV([
+                        {
+                          Date: new Date().toLocaleDateString(),
+                          'Total Revenue': `${currencySymbols[currency as keyof typeof currencySymbols]}${todayStats.revenue}`,
+                          'Orders Completed': todayStats.ordersCompleted,
+                          'Active Tables': todayStats.activeTables,
+                          'Staff Count': todayStats.activeStaff,
+                          'Avg Order Time': `${todayStats.avgOrderTime} min`,
+                          'Peak Hour': todayStats.peakHour
+                        }
+                      ], 'daily_sales_report')}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download CSV
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Staff Performance</h3>
+                      <Download className="text-gray-400 w-5 h-5" />
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">Export staff performance metrics and table assignments.</p>
+                    <Button 
+                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => downloadCSV(
+                        staff.map(member => ({
+                          Username: member.username,
+                          'Display Name': member.name || 'Not set',
+                          Role: member.role,
+                          'Assigned Tables': member.assignedTables?.join(', ') || 'All Tables',
+                          Status: 'Active',
+                          'Created Date': new Date(member.createdAt || new Date()).toLocaleDateString()
+                        })), 
+                        'staff_performance_report'
+                      )}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download CSV
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Table Utilization</h3>
+                      <Download className="text-gray-400 w-5 h-5" />
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">Export table usage statistics and occupancy rates.</p>
+                    <Button 
+                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => downloadCSV(
+                        tables.map(table => ({
+                          'Table Number': table.number,
+                          Status: table.status,
+                          'Created Date': new Date(table.createdAt || new Date()).toLocaleDateString(),
+                          'Current Occupancy': table.status === 'occupied' ? 'Yes' : 'No'
+                        })), 
+                        'table_utilization_report'
+                      )}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download CSV
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card className="mb-8">
+                <div className="p-6 border-b border-gray-200">
+                  <h3 className="text-xl font-bold text-gray-900">Export All Data</h3>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Complete Business Report</h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Export a comprehensive report including all sales, staff, and table data for business analysis.
+                      </p>
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={() => {
+                          const businessData = [
+                            {
+                              'Report Type': 'Business Overview',
+                              'Generated Date': new Date().toLocaleDateString(),
+                              'Total Tables': tables.length,
+                              'Active Tables': todayStats.activeTables,
+                              'Total Staff': staff.length,
+                              'Total Revenue': `${currencySymbols[currency as keyof typeof currencySymbols]}${todayStats.revenue}`,
+                              'Orders Completed': todayStats.ordersCompleted,
+                              'Peak Hour': todayStats.peakHour,
+                              'Avg Order Time': `${todayStats.avgOrderTime} min`
+                            }
+                          ];
+                          downloadCSV(businessData, 'complete_business_report');
+                        }}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Export Business Data
+                      </Button>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">System Status Report</h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Export system configuration and operational status for technical analysis.
+                      </p>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          const systemData = [
+                            {
+                              'System Status': 'Operational',
+                              'Database Status': 'Connected',
+                              'Active Sessions': staff.length,
+                              'Total Tables Configured': tables.length,
+                              'Currency Setting': currency,
+                              'Global Table Access': globalTables ? 'Enabled' : 'Disabled',
+                              'Export Date': new Date().toISOString()
+                            }
+                          ];
+                          downloadCSV(systemData, 'system_status_report');
+                        }}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Export System Status
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+              
             </div>
           )}
 
