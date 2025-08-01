@@ -56,9 +56,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.body;
       
+      // Initialize session if it doesn't exist
+      if (!req.session) {
+        req.session = {};
+      }
+      
       // Only managers can impersonate
-      const currentRole = req.session?.userRole || 'manager';
-      if (currentRole !== 'manager' && !req.session?.originalRole) {
+      const currentRole = req.session.userRole || 'manager';
+      if (currentRole !== 'manager' && !req.session.originalRole) {
         return res.status(403).json({ message: 'Only managers can impersonate users' });
       }
 
@@ -69,9 +74,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Store original role if not already impersonating
-      if (!req.session?.originalRole) {
+      if (!req.session.originalRole) {
         req.session.originalRole = currentRole;
-        req.session.originalUserId = req.session?.userId || 'test-manager-1';
+        req.session.originalUserId = req.session.userId || 'test-manager-1';
       }
 
       // Set impersonation session data
@@ -88,7 +93,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/stop-impersonation', async (req: any, res) => {
     try {
-      if (!req.session?.isImpersonating) {
+      // Initialize session if it doesn't exist
+      if (!req.session) {
+        req.session = {};
+      }
+      
+      if (!req.session.isImpersonating) {
         return res.status(400).json({ message: 'Not currently impersonating' });
       }
 
