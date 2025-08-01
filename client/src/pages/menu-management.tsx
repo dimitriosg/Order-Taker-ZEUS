@@ -326,11 +326,16 @@ export default function MenuManagement() {
       // Get all items in the category
       const itemsInCategory = menuItems.filter(item => item.category === oldName);
       
-      // Update each item's category
+      // Update each item's category (only send the fields we want to update)
       await Promise.all(itemsInCategory.map(item => 
         apiRequest("PATCH", `/api/menu/${item.id}`, {
-          ...item,
-          category: newName
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          category: newName,
+          image: item.image,
+          available: item.available,
+          sortOrder: item.sortOrder
         })
       ));
     },
