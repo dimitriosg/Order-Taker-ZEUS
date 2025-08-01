@@ -12,6 +12,8 @@ import { BatchTableModal } from "@/components/BatchTableModal";
 import { BatchAssignModal } from "@/components/BatchAssignModal";
 import { ProfileModal } from "@/components/ProfileModal";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
+import { EditUserModal } from "@/components/EditUserModal";
+import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +50,9 @@ export default function ManagerDashboard() {
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
   const [editingTableName, setEditingTableName] = useState("");
   const [globalTables, setGlobalTables] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Staff | null>(null);
   const [currency, setCurrency] = useState("EUR");
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(10000); // 10 seconds default
@@ -1135,12 +1140,10 @@ export default function ManagerDashboard() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
+                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                   onClick={() => {
-                                    // TODO: Implement edit functionality
-                                    toast({
-                                      title: "Edit User",
-                                      description: `Edit functionality for ${staffMember.email}`,
-                                    });
+                                    setSelectedUser(staffMember);
+                                    setShowEditUserModal(true);
                                   }}
                                 >
                                   <Edit className="h-4 w-4" />
@@ -1148,12 +1151,10 @@ export default function ManagerDashboard() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                   onClick={() => {
-                                    // TODO: Implement delete functionality
-                                    toast({
-                                      title: "Delete User",
-                                      description: `Delete functionality for ${staffMember.email}`,
-                                    });
+                                    setSelectedUser(staffMember);
+                                    setShowDeleteUserModal(true);
                                   }}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -1226,6 +1227,22 @@ export default function ManagerDashboard() {
           }
         }}
         isLoading={updateTablesMutation.isPending}
+      />
+      <EditUserModal
+        isOpen={showEditUserModal}
+        onClose={() => {
+          setShowEditUserModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
+      <DeleteUserModal
+        isOpen={showDeleteUserModal}
+        onClose={() => {
+          setShowDeleteUserModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
       />
 
     </div>

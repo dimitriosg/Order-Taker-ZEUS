@@ -118,6 +118,25 @@ export class DatabaseStorage implements IStorage {
     return table;
   }
 
+  async updateStaff(id: string, data: { name?: string; role?: string }): Promise<User> {
+    const updateData: any = { updatedAt: new Date() };
+    if (data.name !== undefined) updateData.firstName = data.name.trim() || null;
+    if (data.role !== undefined) updateData.role = data.role;
+
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async deleteStaff(id: string): Promise<void> {
+    await db
+      .delete(users)
+      .where(eq(users.id, id));
+  }
+
   async getAllMenuItems(): Promise<MenuItem[]> {
     return await db.select().from(menuItems);
   }

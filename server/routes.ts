@@ -258,6 +258,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update staff member
+  app.put('/api/staff/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, role } = req.body;
+      
+      const staff = await storage.updateStaff(id, { name, role });
+      res.json(staff);
+    } catch (error) {
+      console.error("Error updating staff:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Delete staff member
+  app.delete('/api/staff/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      await storage.deleteStaff(id);
+      res.json({ message: 'Staff member deleted successfully' });
+    } catch (error) {
+      console.error("Error deleting staff:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Order routes
   app.post('/api/orders', async (req: any, res) => {
     try {
