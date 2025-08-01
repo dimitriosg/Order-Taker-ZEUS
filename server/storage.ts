@@ -33,6 +33,7 @@ export interface IStorage {
   getAllTables(): Promise<Table[]>;
   createTable(table: InsertTable): Promise<Table>;
   updateTableStatus(tableNumber: number, status: "free" | "occupied"): Promise<Table>;
+  updateTableName(id: string, name: string): Promise<Table>;
 
   // Menu Items
   getAllMenuItems(): Promise<MenuItem[]>;

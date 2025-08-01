@@ -69,7 +69,7 @@ export default function WaiterDashboard() {
   // Mark order as served mutation
   const markServedMutation = useMutation({
     mutationFn: async (orderId: string) => {
-      const response = await apiRequest("PUT", `/api/orders/${orderId}/status`, {
+      const response = await apiRequest("PATCH", `/api/orders/${orderId}/status`, {
         status: "served"
       });
       return response.json();
@@ -77,6 +77,7 @@ export default function WaiterDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/status"] });
       toast({
         title: "Order marked as served",
         description: "The order has been completed successfully",
@@ -87,7 +88,7 @@ export default function WaiterDashboard() {
   // Update table name mutation
   const updateTableNameMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const response = await apiRequest("PUT", `/api/tables/${id}/name`, { name });
+      const response = await apiRequest("PATCH", `/api/tables/${id}/name`, { name });
       return response.json();
     },
     onSuccess: () => {
@@ -106,6 +107,7 @@ export default function WaiterDashboard() {
     const handleOrderUpdate = (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/status"] });
       
       if (data.order.status === "ready") {
         toast({
@@ -129,12 +131,19 @@ export default function WaiterDashboard() {
       }
     };
 
-    socket.on("orderStatusUpdated", handleOrderUpdate);
+    const handleNewOrder = (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
+    };
+
+    socket.on("order_status_updated", handleOrderUpdate);
     socket.on("cross_waiter_order", handleCrossWaiterOrder);
+    socket.on("newOrder", handleNewOrder);
 
     return () => {
-      socket.off("orderStatusUpdated", handleOrderUpdate);
+      socket.off("order_status_updated", handleOrderUpdate);
       socket.off("cross_waiter_order", handleCrossWaiterOrder);
+      socket.off("newOrder", handleNewOrder);
     };
   }, [socket, queryClient, toast, user?.id]);
 

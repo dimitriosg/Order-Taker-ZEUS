@@ -339,8 +339,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update table name
-  app.put('/api/tables/:id/name', async (req, res) => {
+  // Update table name (support both PUT and PATCH)
+  const updateTableName = async (req: any, res: any) => {
     try {
       const { id } = req.params;
       const { name } = req.body;
@@ -351,7 +351,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error updating table name:", error);
       res.status(500).json({ message: 'Server error' });
     }
-  });
+  };
+
+  app.put('/api/tables/:id/name', updateTableName);
+  app.patch('/api/tables/:id/name', updateTableName);
 
   // Update staff member
   app.put('/api/staff/:id', async (req, res) => {
