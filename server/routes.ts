@@ -536,14 +536,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/staff/:id', async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, role, password } = req.body;
+      const { name, firstName, lastName, email, role, password } = req.body;
       
       // Validate password length if provided
       if (password && password.length < 6) {
         return res.status(400).json({ message: 'Password must be at least 6 characters long' });
       }
       
-      const staff = await storage.updateStaff(id, { name, role, password });
+      // Support both legacy 'name' field and new firstName/lastName fields
+      const updateData: any = {};
+      if (name !== undefined) updateData.name = name;
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (email !== undefined) updateData.email = email;
+      if (role !== undefined) updateData.role = role;
+      if (password !== undefined) updateData.password = password;
+      
+      const staff = await storage.updateStaff(id, updateData);
       res.json(staff);
     } catch (error) {
       console.error("Error updating staff:", error);

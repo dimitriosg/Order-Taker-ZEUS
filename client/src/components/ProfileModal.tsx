@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -26,12 +27,15 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
   const { user } = useAuth() as { user: User | undefined };
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [name, setName] = useState(user?.firstName || "");
+  const [firstName, setFirstName] = useState(user?.firstName || "");
+  const [lastName, setLastName] = useState(user?.lastName || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: { name?: string; password?: string }) => {
+    mutationFn: async (data: { firstName?: string; lastName?: string; password?: string }) => {
       const response = await apiRequest("PUT", `/api/staff/${user?.id}`, data);
       return response.json();
     },
@@ -76,10 +80,14 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
       return;
     }
 
-    const updateData: { name?: string; password?: string } = {};
+    const updateData: { firstName?: string; lastName?: string; password?: string } = {};
     
-    if (name !== user?.firstName) {
-      updateData.name = name;
+    if (firstName !== user?.firstName) {
+      updateData.firstName = firstName;
+    }
+    
+    if (lastName !== user?.lastName) {
+      updateData.lastName = lastName;
     }
     
     if (password) {
@@ -101,39 +109,77 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Display Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your display name"
-            />
-            <p className="text-xs text-gray-500 mt-1">Currently: {user?.firstName || 'Not set'}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Enter your first name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Enter your last name"
+              />
+            </div>
           </div>
           
           <div>
             <Label htmlFor="password">New Password (optional)</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Leave blank to keep current password"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Leave blank to keep current password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
             <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
           </div>
           
           {password && (
             <div>
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your new password"
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm your new password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
           )}
           
