@@ -35,11 +35,12 @@ export default function MenuManagement() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+  const [showSingleDeleteDialog, setShowSingleDeleteDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<{type: 'all' | 'category', category?: string}>({type: 'all'});
+  const [deleteTarget, setDeleteTarget] = useState<{type: 'all' | 'category' | 'single', category?: string, item?: MenuItem}>({type: 'all'});
 
   // Form state
   const [formData, setFormData] = useState({
@@ -305,9 +306,33 @@ export default function MenuManagement() {
     setShowDeleteConfirmDialog(true);
   };
 
+  const handleSingleDelete = (item: MenuItem) => {
+    setDeleteTarget({ type: 'single', item });
+    setShowSingleDeleteDialog(true);
+  };
+
   const executeBulkDelete = (force: boolean = false) => {
+    if (deleteTarget.type === 'single' && deleteTarget.item) {
+      deleteItemMutation.mutate({ id: deleteTarget.item.id, force }, {
+        onError: (error: any) => {
+          if (error.code === "FOREIGN_KEY_CONSTRAINT" && !force) {
+            const forceDelete = confirm(
+              `"${deleteTarget.item!.name}" is used in existing orders. Force delete will remove it from all orders. Continue?`
+            );
+            if (forceDelete) {
+              deleteItemMutation.mutate({ id: deleteTarget.item!.id, force: true });
+            }
+          }
+        },
+        onSuccess: () => {
+          setShowSingleDeleteDialog(false);
+        }
+      });
+      return;
+    }
+
     bulkDeleteMutation.mutate({
-      type: deleteTarget.type,
+      type: deleteTarget.type as 'all' | 'category',
       category: deleteTarget.category,
       force
     }, {
@@ -705,23 +730,7 @@ export default function MenuManagement() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
-                                const shouldDelete = confirm(`Delete "${item.name}"?`);
-                                if (shouldDelete) {
-                                  deleteItemMutation.mutate({ id: item.id, force: false }, {
-                                    onError: (error: any) => {
-                                      if (error.code === "FOREIGN_KEY_CONSTRAINT") {
-                                        const forceDelete = confirm(
-                                          `"${item.name}" is used in existing orders. Force delete will remove it from all orders. Continue?`
-                                        );
-                                        if (forceDelete) {
-                                          deleteItemMutation.mutate({ id: item.id, force: true });
-                                        }
-                                      }
-                                    }
-                                  });
-                                }
-                              }}
+                              onClick={() => handleSingleDelete(item)}
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
@@ -754,6 +763,32 @@ export default function MenuManagement() {
           </CardContent>
         </Card>
       )}
+
+      {/* Single Item Delete Confirmation Dialog */}
+      <Dialog open={showSingleDeleteDialog} onOpenChange={setShowSingleDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete "{deleteTarget.item?.name}"? If this item is referenced in existing orders, it cannot be deleted and will be skipped. This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowSingleDeleteDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => executeBulkDelete(false)}
+                disabled={deleteItemMutation.isPending}
+              >
+                {deleteItemMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
