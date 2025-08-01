@@ -370,7 +370,7 @@ export default function CashierDashboard() {
                         {(order.items || []).map((item, index) => (
                           <div key={index} className="flex justify-between text-sm text-gray-700">
                             <span>{item.quantity}x {item.menuItem?.name || `Item #${item.menuItemId.slice(-6)}`}</span>
-                            <span className="font-medium">${(item.menuItem?.price * item.quantity || 0).toFixed(2)}</span>
+                            <span className="font-medium">${((item.menuItem?.price || 0) * item.quantity).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
@@ -456,7 +456,7 @@ export default function CashierDashboard() {
                         {(order.items || []).map((item, index) => (
                           <div key={index} className="flex justify-between text-sm text-gray-700">
                             <span>{item.quantity}x {item.menuItem?.name || `Item #${item.menuItemId.slice(-6)}`}</span>
-                            <span className="font-medium">${(item.menuItem?.price * item.quantity || 0).toFixed(2)}</span>
+                            <span className="font-medium">${((item.menuItem?.price || 0) * item.quantity).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
@@ -540,7 +540,7 @@ export default function CashierDashboard() {
                         {(order.items || []).map((item, index) => (
                           <div key={index} className="flex justify-between text-sm text-gray-700">
                             <span>{item.quantity}x {item.menuItem?.name || `Item #${item.menuItemId.slice(-6)}`}</span>
-                            <span className="font-medium">${(item.menuItem?.price * item.quantity || 0).toFixed(2)}</span>
+                            <span className="font-medium">${((item.menuItem?.price || 0) * item.quantity).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>

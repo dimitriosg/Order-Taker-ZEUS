@@ -328,7 +328,7 @@ export default function ManagerDashboard() {
   const todayStats = {
     revenue: orders.reduce((total, order) => 
       total + (order.items || []).reduce((orderTotal, item) => 
-        orderTotal + ((item.menuItem?.price || 0) * item.quantity), 0
+        orderTotal + (((item as any).menuItem?.price || 0) * item.quantity), 0
       ), 0
     ),
     ordersCompleted: orders.filter(order => order.status === "served").length,
@@ -373,7 +373,7 @@ export default function ManagerDashboard() {
       // Calculate total revenue from order items and their prices
       const totalRevenue = completedOrders.reduce((sum, order) => {
         const orderTotal = (order.items || []).reduce((orderSum, item) => {
-          const itemPrice = item.menuItem?.price || 0;
+          const itemPrice = (item as any).menuItem?.price || 0;
           return orderSum + (itemPrice * item.quantity);
         }, 0);
         return sum + orderTotal;
@@ -406,7 +406,7 @@ export default function ManagerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ImpersonationBanner user={user} />
+      {user && <ImpersonationBanner user={user as any} />}
       
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
@@ -955,7 +955,7 @@ export default function ManagerDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                 {getTableMonitorData().map((table) => (
                   <Card key={table.id} className={`border-l-4 ${
-                    table.status === "ready" ? "border-l-red-500 bg-red-50" :
+                    table.activeOrder?.status === "ready" ? "border-l-red-500 bg-red-50" :
                     table.status === "occupied" ? "border-l-amber-500 bg-amber-50" :
                     "border-l-green-500 bg-green-50"
                   }`}>
@@ -1004,11 +1004,11 @@ export default function ManagerDashboard() {
                             </div>
                           )}
                           <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            table.status === "ready" ? "bg-red-100 text-red-800" :
+                            table.activeOrder?.status === "ready" ? "bg-red-100 text-red-800" :
                             table.status === "occupied" ? "bg-amber-100 text-amber-800" :
                             "bg-green-100 text-green-800"
                           }`}>
-                            {table.status === "ready" ? "🔔 Order Ready" :
+                            {table.activeOrder?.status === "ready" ? "🔔 Order Ready" :
                              table.status === "occupied" ? "👥 Occupied" :
                              "✅ Available"}
                           </div>
@@ -1142,7 +1142,7 @@ export default function ManagerDashboard() {
                       <div className="ml-4">
                         <p className="text-sm font-medium text-gray-600">Ready to Serve</p>
                         <p className="text-2xl font-bold text-gray-900">
-                          {getTableMonitorData().filter(t => t.status === "ready").length}
+                          {getTableMonitorData().filter(t => t.activeOrder?.status === "ready").length}
                         </p>
                       </div>
                     </div>
