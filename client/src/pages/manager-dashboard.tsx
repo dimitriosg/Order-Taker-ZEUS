@@ -659,14 +659,38 @@ export default function ManagerDashboard() {
               <Card>
                 <div className="p-6 border-b border-gray-200">
                   <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-gray-900">Staff Management</h2>
-                    <Button
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => setShowAddStaffModal(true)}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Staff Member
-                    </Button>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">Staff Management</h2>
+                      <p className="text-sm text-gray-600 mt-1">Manage all restaurant staff members and their roles</p>
+                    </div>
+                    <div className="flex space-x-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => downloadCSV(
+                          staff.map(member => ({
+                            ID: member.id,
+                            Email: member.email,
+                            'First Name': member.firstName || 'Not set',
+                            'Last Name': member.lastName || 'Not set',
+                            Role: member.role,
+                            'Assigned Tables': member.assignedTables?.join(', ') || 'All Tables',
+                            'Created Date': new Date(member.createdAt || new Date()).toLocaleDateString(),
+                            'Updated Date': new Date(member.updatedAt || new Date()).toLocaleDateString()
+                          })), 
+                          'all_staff_list'
+                        )}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Export CSV
+                      </Button>
+                      <Button
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        onClick={() => setShowAddStaffModal(true)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Staff Member
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 
@@ -675,8 +699,8 @@ export default function ManagerDashboard() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200">
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Username</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Display Name</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Email / ID</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Full Name</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Role</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Assigned Tables</th>
@@ -687,10 +711,16 @@ export default function ManagerDashboard() {
                         {staff.map((staffMember) => (
                           <tr key={staffMember.id} className="border-b border-gray-100">
                             <td className="py-3 px-4">
-                              <div className="font-medium text-gray-900">@{staffMember.username}</div>
+                              <div className="font-medium text-gray-900">{staffMember.email}</div>
+                              <div className="text-sm text-gray-500">ID: {staffMember.id}</div>
                             </td>
                             <td className="py-3 px-4">
-                              <div className="text-gray-900">{staffMember.name || "Not set"}</div>
+                              <div className="text-gray-900">
+                                {staffMember.firstName && staffMember.lastName 
+                                  ? `${staffMember.firstName} ${staffMember.lastName}` 
+                                  : "Not set"
+                                }
+                              </div>
                             </td>
                             <td className="py-3 px-4">
                               <Badge variant={
@@ -715,10 +745,30 @@ export default function ManagerDashboard() {
                             </td>
                             <td className="py-3 px-4">
                               <div className="flex space-x-2">
-                                <Button variant="ghost" size="sm">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    // TODO: Implement edit functionality
+                                    toast({
+                                      title: "Edit User",
+                                      description: `Edit functionality for ${staffMember.email}`,
+                                    });
+                                  }}
+                                >
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    // TODO: Implement delete functionality
+                                    toast({
+                                      title: "Delete User",
+                                      description: `Delete functionality for ${staffMember.email}`,
+                                    });
+                                  }}
+                                >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
