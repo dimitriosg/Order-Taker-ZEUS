@@ -39,20 +39,22 @@ export default function CategoryOrderModal({ open, onClose }: CategoryOrderModal
 
   // Update local state when data changes
   useEffect(() => {
-    if (categories.length > 0) {
-      setLocalCategories([...categories].sort((a, b) => a.sortOrder - b.sortOrder));
-    } else if (menuCategories.length > 0) {
-      // If no categories in database, create temporary ones from menu items
-      const tempCategories: Category[] = menuCategories.map((name, index) => ({
-        id: `temp-${name}`,
-        name,
-        sortOrder: index,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }));
-      setLocalCategories(tempCategories);
+    if (open) {
+      if (categories.length > 0) {
+        setLocalCategories([...categories].sort((a, b) => a.sortOrder - b.sortOrder));
+      } else if (menuCategories.length > 0) {
+        // If no categories in database, create temporary ones from menu items
+        const tempCategories: Category[] = menuCategories.map((name, index) => ({
+          id: `temp-${name}`,
+          name,
+          sortOrder: index,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }));
+        setLocalCategories(tempCategories);
+      }
     }
-  }, [categories, menuCategories]);
+  }, [categories, menuCategories, open]);
 
   // Create missing categories mutation
   const createCategoriesMutation = useMutation({

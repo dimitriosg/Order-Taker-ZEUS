@@ -465,22 +465,25 @@ export default function MenuManagement() {
           </div>
         </div>
         
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline"
-            onClick={() => setShowCategoryOrderModal(true)}
-          >
-            <ArrowUpDown className="w-4 h-4 mr-2" />
-            Arrange Categories
-          </Button>
-          
-          <Dialog open={showAddCategoryDialog} onOpenChange={setShowAddCategoryDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <FolderPlus className="w-4 h-4 mr-2" />
-                Add Category
-              </Button>
-            </DialogTrigger>
+        <div className="flex space-x-4">
+          {/* Category Management Group */}
+          <div className="flex flex-col space-y-2">
+            <Button 
+              variant="outline"
+              onClick={() => setShowCategoryOrderModal(true)}
+              className="w-full"
+            >
+              <ArrowUpDown className="w-4 h-4 mr-2" />
+              Arrange Categories
+            </Button>
+            
+            <Dialog open={showAddCategoryDialog} onOpenChange={setShowAddCategoryDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full">
+                  <FolderPlus className="w-4 h-4 mr-2" />
+                  Add Category
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add New Category</DialogTitle>
@@ -506,14 +509,17 @@ export default function MenuManagement() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
 
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Menu Item
-              </Button>
-            </DialogTrigger>
+          {/* Menu Item Management Group */}
+          <div className="flex flex-col space-y-2">
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm} className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Menu Item
+                </Button>
+              </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{editingItem ? "Edit Menu Item" : "Add New Menu Item"}</DialogTitle>
@@ -653,10 +659,12 @@ export default function MenuManagement() {
           variant="destructive" 
           onClick={() => handleBulkDelete('all')}
           disabled={menuItems.length === 0}
+          className="w-full"
         >
           <Trash className="w-4 h-4 mr-2" />
           Delete All Items
         </Button>
+        </div>
         </div>
       </div>
 
