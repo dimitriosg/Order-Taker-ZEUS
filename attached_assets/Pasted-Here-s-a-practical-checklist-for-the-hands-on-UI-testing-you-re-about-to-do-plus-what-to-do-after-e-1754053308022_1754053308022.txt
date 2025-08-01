@@ -1,0 +1,68 @@
+Here’s a practical checklist for the hands-on UI testing you’re about to do, plus what to do after each pass:
+
+1. Waiter workflow
+Log in as waiter / password.
+
+Pick a free table (make sure only the waiter’s assigned tables appear if you enabled assignments).
+
+Add several menu items, adjust quantities, add a note (e.g., “no onions”).
+
+Collect cash → mark order as Paid → submit.
+
+Watch that the table switches to occupied and the order moves to the paid queue.
+
+Open the browser dev-tools console: make sure no errors appear and that you see the Socket.IO “connected” message.
+
+If anything feels clunky (e.g., total isn’t obvious or the Paid button isn’t prominent), jot it down for a UI tweak.
+
+2. Cashier / kitchen workflow
+In a second browser tab or window, log in as cashier / password.
+
+Confirm the new paid order shows up instantly (WebSocket event).
+
+Click “in-prep” → then “ready.”
+
+Switch back to the waiter view: confirm the status pill or badge updates without a refresh.
+
+Mark the order served and confirm the table flips back to free.
+
+If any status change needs a manual refresh or feels delayed, it’s likely a WebSocket emit/room issue to tweak.
+
+3. Manager workflow
+Log in as manager / password.
+
+Open staff management: assign one or two tables to the waiter, save, and log back in as that waiter to confirm only those tables appear.
+
+Update a menu item (price or description). Check that the change propagates to the waiter’s menu list in real time (or at least on reload).
+
+Review any built-in reports or lists. If analytics is still bare-bones, note the metrics you’d like next (daily sales, top items, etc.).
+
+4. Debug / polish loop
+Console logs: Replit’s “Shell” tab shows your server logs; browser dev-tools show client errors. Fix obvious warnings (CORS, 404s, PropType or TS errors).
+
+Validation: Try edge cases—submit an order without items, exceed quantity limits, attempt to access a manager URL as a waiter, etc. Make sure the app blocks or warns appropriately.
+
+UI feedback: If any button lacks feedback (e.g., spinner or toast), add it so users know an action succeeded.
+
+5. Decide what’s next
+Once basic flows feel solid, plan the next sprint:
+
+Priority	Why it matters	Example tasks
+Polish UI/UX	Make it production-ready	Add loading spinners, mobile-friendly layout, branded colors
+Analytics	Give managers insight	Charts for sales/day, busiest tables, top dishes
+Inventory / cost	Reduce kitchen shortages	Track item stock, warn when low
+Security & roles	Hardening for production	Rate-limit login, add refresh tokens, enforce HTTPS in deployment
+Deployment	Share with staff	Use Replit Deploy or push to a VPS with Docker/Compose
+
+6. Keep notes
+As you test, capture:
+
+Bugs (UI, logic, real-time issues)
+
+UX improvements (button placement, clearer labels)
+
+Feature wishlist (discounts, split bills, multi-language)
+
+Bring that list back here, and I’ll walk you through implementing (or delegating to Replit AI) each change.
+
+Next step: start the waiter login and run through that first pass. If something breaks or feels off, ping me with the symptoms (console error, unexpected screen, etc.) and we’ll debug together.
