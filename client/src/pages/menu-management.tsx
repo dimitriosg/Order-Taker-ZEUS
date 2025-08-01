@@ -703,7 +703,7 @@ export default function MenuManagement() {
         <div className="text-center py-8">Loading menu items...</div>
       ) : (
         <div className="space-y-8">
-          {Object.keys(itemsByCategory).sort().map((category) => (
+          {allCategories.filter(category => itemsByCategory[category]).map((category) => (
             <Card key={category}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
