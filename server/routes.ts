@@ -279,6 +279,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Table management routes
+  app.post('/api/tables', auth(['manager']), async (req: Request, res: Response) => {
+    try {
+      const { number } = req.body;
+      const table = await storage.createTable({ number, status: "free" });
+      res.json(table);
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   app.put('/api/staff/:id/tables', auth(['manager']), async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { assignedTables } = req.body;

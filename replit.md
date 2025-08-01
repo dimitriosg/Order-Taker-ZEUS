@@ -27,9 +27,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Database Schema Design
 - **ORM**: Drizzle ORM configured for PostgreSQL with migration support
-- **Tables**: Users (with role-based access), Tables, Menu Items, Orders, and Order Items
+- **Tables**: Users (with role-based access and names), Tables, Menu Items, Orders, and Order Items
 - **Relationships**: Foreign key constraints between orders, users, and menu items
 - **Enums**: Predefined roles (waiter, cashier, manager), order statuses, and table statuses
+- **User Profiles**: Name field added to users table with profile update API endpoints
 
 ### Authentication and Authorization
 - **JWT Implementation**: Token-based authentication with automatic expiration checking
@@ -47,11 +48,19 @@ Preferred communication style: Simple, everyday language.
 - **Cash-only System**: Simplified payment flow where waiters collect cash before order submission
 - **Payment Validation**: Orders require payment confirmation before kitchen processing
 - **Audit Trail**: Cash received amount and payment timestamps for reporting
+- **Multi-Currency Support**: Configurable currency display (EUR, USD, GBP, JPY) with Euro as default
 
 ### Table Management
+- **Dynamic Table Creation**: Admins can create new tables with unique numbers
+- **Visual Table Status**: Real-time display of table occupancy (free/occupied) with color coding
 - **Flexible Assignment**: Configurable table assignments per waiter or global access mode
 - **Dynamic Status Tracking**: Real-time table occupancy status updates
-- **Manager Controls**: Administrative interface for table assignment management
+- **Manager Controls**: Administrative interface for table creation and assignment management
+
+### Profile Management
+- **User Profile Editing**: All users can update display names and passwords
+- **Display Name Format**: Headers show "Name / @username" when name is set, "@username" otherwise
+- **Secure Updates**: Password changes are properly hashed and JWT tokens refreshed
 
 ## External Dependencies
 
