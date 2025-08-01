@@ -36,6 +36,7 @@ export const users = pgTable("users", {
 export const tables = pgTable("tables", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   number: integer("number").notNull().unique(),
+  name: text("name"), // Custom name for the table (optional)
   status: tableStatusEnum("status").notNull().default("free"),
 });
 

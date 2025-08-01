@@ -5,7 +5,7 @@ import { useSocket } from "@/contexts/SocketContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Utensils, Receipt, Menu, LogOut, Check, Clock, Plus, User } from "lucide-react";
+import { Utensils, Receipt, Menu, LogOut, Check, Clock, Plus, User, Edit } from "lucide-react";
 import { NewOrderModal } from "@/components/NewOrderModal";
 import { ProfileModal } from "@/components/ProfileModal";
 import { apiRequest } from "@/lib/queryClient";
@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 interface Table {
   id: string;
   number: number;
+  name?: string | null;
   status: "free" | "occupied";
 }
 
@@ -45,6 +46,8 @@ export default function WaiterDashboard() {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [activeView, setActiveView] = useState("tables");
+  const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [editingTableName, setEditingTableName] = useState("");
 
   // Fetch tables
   const { data: tables = [], isLoading: tablesLoading } = useQuery<Table[]>({
@@ -71,6 +74,23 @@ export default function WaiterDashboard() {
         title: "Order marked as served",
         description: "The order has been completed successfully",
       });
+    },
+  });
+
+  // Update table name mutation
+  const updateTableNameMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const response = await apiRequest("PUT", `/api/tables/${id}/name`, { name });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
+      toast({
+        title: "Table name updated",
+        description: "Table name has been saved successfully",
+      });
+      setEditingTableId(null);
+      setEditingTableName("");
     },
   });
 
@@ -120,6 +140,34 @@ export default function WaiterDashboard() {
   const filteredTables = tables; // Show all tables for testing
 
   const activeOrders = orders.filter(order => order.status !== "served");
+
+  // Format table display name
+  const getTableDisplayName = (table: Table) => {
+    if (table.name) {
+      return `${table.name} / Table ${table.number}`;
+    }
+    return `Table ${table.number}`;
+  };
+
+  // Handle table name edit
+  const handleTableNameEdit = (table: Table) => {
+    setEditingTableId(table.id);
+    setEditingTableName(table.name || "");
+  };
+
+  const handleTableNameSave = () => {
+    if (editingTableId) {
+      updateTableNameMutation.mutate({
+        id: editingTableId,
+        name: editingTableName.trim()
+      });
+    }
+  };
+
+  const handleTableNameCancel = () => {
+    setEditingTableId(null);
+    setEditingTableName("");
+  };
 
   if (tablesLoading || ordersLoading) {
     return (
@@ -217,7 +265,54 @@ export default function WaiterDashboard() {
                             <Check className={`text-green-600 h-5 w-5`} />
                           )}
                         </div>
-                        <h3 className="font-semibold text-gray-900">Table {table.number}</h3>
+                        {editingTableId === table.id ? (
+                          <div className="flex flex-col items-center space-y-2">
+                            <input
+                              type="text"
+                              value={editingTableName}
+                              onChange={(e) => setEditingTableName(e.target.value)}
+                              placeholder="Custom name"
+                              className="text-xs border border-gray-300 rounded px-2 py-1 w-full text-center"
+                              autoFocus
+                            />
+                            <div className="flex space-x-1">
+                              <Button
+                                size="sm"
+                                onClick={handleTableNameSave}
+                                disabled={updateTableNameMutation.isPending}
+                                className="text-xs h-6 px-2"
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleTableNameCancel}
+                                disabled={updateTableNameMutation.isPending}
+                                className="text-xs h-6 px-2"
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center space-x-1">
+                            <h3 className="font-semibold text-gray-900 text-center">
+                              {getTableDisplayName(table)}
+                            </h3>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTableNameEdit(table);
+                              }}
+                              className="p-1 h-4 w-4 hover:bg-gray-100"
+                            >
+                              <Edit className="h-2 w-2" />
+                            </Button>
+                          </div>
+                        )}
                         <p className={`text-sm ${
                           color === "green" ? "text-green-600" :
                           color === "amber" ? "text-amber-600" : "text-red-600"

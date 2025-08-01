@@ -27,6 +27,7 @@ interface Staff {
 interface TableData {
   id: string;
   number: number;
+  name?: string | null;
   status: "free" | "occupied";
 }
 
@@ -44,10 +45,12 @@ export default function ManagerDashboard() {
   const [showRemoveTableModal, setShowRemoveTableModal] = useState(false);
   const [showAssignTableModal, setShowAssignTableModal] = useState(false);
   const [selectedWaiterForAssignment, setSelectedWaiterForAssignment] = useState<string | null>(null);
+  const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [editingTableName, setEditingTableName] = useState("");
   const [globalTables, setGlobalTables] = useState(false);
   const [currency, setCurrency] = useState("EUR");
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
-  const [refreshInterval, setRefreshInterval] = useState(5000); // 5 seconds
+  const [refreshInterval, setRefreshInterval] = useState(10000); // 10 seconds default
 
   // Fetch staff
   const { data: staff = [], isLoading: staffLoading } = useQuery<Staff[]>({
@@ -112,6 +115,23 @@ export default function ManagerDashboard() {
     },
   });
 
+  // Update table name mutation
+  const updateTableNameMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const response = await apiRequest("PUT", `/api/tables/${id}/name`, { name });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
+      toast({
+        title: "Table name updated",
+        description: "Table name has been saved successfully",
+      });
+      setEditingTableId(null);
+      setEditingTableName("");
+    },
+  });
+
   const toggleTableAssignment = (staffId: string, tableNumber: number) => {
     const staffMember = staff.find(s => s.id === staffId);
     if (!staffMember) return;
@@ -125,6 +145,45 @@ export default function ManagerDashboard() {
   };
 
   const waiters = staff.filter(s => s.role === "waiter");
+
+  // Format table display name
+  const getTableDisplayName = (table: TableData) => {
+    if (table.name) {
+      return `${table.name} / Table ${table.number}`;
+    }
+    return `Table ${table.number}`;
+  };
+
+  // Handle table name edit
+  const handleTableNameEdit = (table: TableData) => {
+    setEditingTableId(table.id);
+    setEditingTableName(table.name || "");
+  };
+
+  const handleTableNameSave = () => {
+    if (editingTableId) {
+      updateTableNameMutation.mutate({
+        id: editingTableId,
+        name: editingTableName.trim()
+      });
+    }
+  };
+
+  const handleTableNameCancel = () => {
+    setEditingTableId(null);
+    setEditingTableName("");
+  };
+
+  // Refresh interval options
+  const refreshIntervalOptions = [
+    { value: 2000, label: "2s" },
+    { value: 5000, label: "5s" },
+    { value: 10000, label: "10s" },
+    { value: 30000, label: "30s" },
+    { value: 60000, label: "1min" },
+    { value: 120000, label: "2min" },
+    { value: 300000, label: "5min" },
+  ];
 
   const currencySymbols = {
     USD: "$",
@@ -639,10 +698,11 @@ export default function ManagerDashboard() {
                     onChange={(e) => setRefreshInterval(Number(e.target.value))}
                     className="text-sm border border-gray-300 rounded px-2 py-1"
                   >
-                    <option value={2000}>2s refresh</option>
-                    <option value={5000}>5s refresh</option>
-                    <option value={10000}>10s refresh</option>
-                    <option value={30000}>30s refresh</option>
+                    {refreshIntervalOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} refresh
+                      </option>
+                    ))}
                   </select>
                   <Button
                     variant="outline"
@@ -676,7 +736,47 @@ export default function ManagerDashboard() {
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900">Table {table.number}</h3>
+                          {editingTableId === table.id ? (
+                            <div className="flex items-center space-x-2 mb-2">
+                              <input
+                                type="text"
+                                value={editingTableName}
+                                onChange={(e) => setEditingTableName(e.target.value)}
+                                placeholder="Custom name (optional)"
+                                className="text-sm border border-gray-300 rounded px-2 py-1 flex-1"
+                                autoFocus
+                              />
+                              <Button
+                                size="sm"
+                                onClick={handleTableNameSave}
+                                disabled={updateTableNameMutation.isPending}
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleTableNameCancel}
+                                disabled={updateTableNameMutation.isPending}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="text-lg font-bold text-gray-900">
+                                {getTableDisplayName(table)}
+                              </h3>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleTableNameEdit(table)}
+                                className="p-1 h-6 w-6 hover:bg-gray-100"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
                           <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             table.status === "ready" ? "bg-red-100 text-red-800" :
                             table.status === "occupied" ? "bg-amber-100 text-amber-800" :

@@ -109,6 +109,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tables.number, tableNumber));
   }
 
+  async updateTableName(id: string, name: string): Promise<Table> {
+    const [table] = await db
+      .update(tables)
+      .set({ name: name.trim() || null })
+      .where(eq(tables.id, id))
+      .returning();
+    return table;
+  }
+
   async getAllMenuItems(): Promise<MenuItem[]> {
     return await db.select().from(menuItems);
   }
