@@ -295,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               userId = dbUser.id;
             }
           }
-        } catch (dbError) {
+        } catch (dbError: any) {
           console.log('Database auth failed, trying demo credentials:', dbError.message);
         }
         
@@ -748,15 +748,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update table status to occupied
       await storage.updateTableStatus(tableNumber, 'occupied');
 
-      // Broadcast to cashiers about new order
+      // Broadcast to cashiers about new order using the correct event name
       broadcastToRole('cashier', {
-        type: 'new_order',
+        type: 'newOrder',
         order: order
       });
       
       // Broadcast to managers
       broadcastToRole('manager', {
-        type: 'new_order',
+        type: 'newOrder',
         order: order
       });
 

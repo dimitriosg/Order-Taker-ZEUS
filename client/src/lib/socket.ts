@@ -15,16 +15,19 @@ export class SocketService {
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
-      console.log('WebSocket connected');
+      console.log('WebSocket connected successfully');
       this.reconnectAttempts = 0;
       
       // Join role-specific room
-      this.send({ type: 'join', role });
+      const joinMessage = { type: 'join', role };
+      console.log('Sending join message:', joinMessage);
+      this.send(joinMessage);
     };
 
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log('WebSocket message received:', data);
         this.emit(data.type, data);
       } catch (error) {
         console.error('WebSocket message parse error:', error);
@@ -72,6 +75,7 @@ export class SocketService {
   }
 
   private emit(event: string, data: any) {
+    console.log(`Emitting event '${event}' to ${this.listeners.get(event)?.size || 0} listeners`);
     const eventListeners = this.listeners.get(event);
     if (eventListeners) {
       eventListeners.forEach(callback => callback(data));
