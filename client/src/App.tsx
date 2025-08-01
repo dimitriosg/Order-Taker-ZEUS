@@ -13,7 +13,7 @@ import ManagerDashboard from "@/pages/manager-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, error } = useAuth();
 
   if (isLoading) {
     return (
@@ -23,9 +23,17 @@ function Router() {
     );
   }
 
-  // For testing purposes, always show as authenticated with manager role
-  const testUser = user || { role: 'manager' };
+  // If user is not authenticated or there's an error, show landing page
+  if (!isAuthenticated || error) {
+    return (
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route><Redirect to="/" /></Route>
+      </Switch>
+    );
+  }
 
+  // User is authenticated, show role-based dashboard
   return (
     <Switch>
       <Route path="/waiter">
@@ -41,7 +49,10 @@ function Router() {
       </Route>
       
       <Route path="/">
-        <Redirect to="/manager" />
+        {user?.role === 'manager' && <Redirect to="/manager" />}
+        {user?.role === 'waiter' && <Redirect to="/waiter" />}
+        {user?.role === 'cashier' && <Redirect to="/cashier" />}
+        {!user?.role && <Redirect to="/manager" />}
       </Route>
       
       <Route component={NotFound} />

@@ -51,24 +51,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  // Auth routes - temporary mock for testing
+  // Auth routes - demo mock for testing
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      // Return a mock manager user to test table creation
-      const mockUser = {
-        id: 'test-manager-1',
-        email: 'manager@example.com',
-        firstName: 'Test',
-        lastName: 'Manager',
-        role: 'manager',
-        assignedTables: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+      // Check if user is "logged out" via logout endpoint
+      const isLoggedOut = req.query.logout === 'true';
+      if (isLoggedOut) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      // For demo, create user based on role in session or default to manager
+      const role = req.session?.userRole || 'manager';
+      const mockUsers = {
+        manager: {
+          id: 'test-manager-1',
+          email: 'manager@example.com',
+          firstName: 'Test',
+          lastName: 'Manager',
+          role: 'manager',
+          assignedTables: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        waiter: {
+          id: 'test-waiter-1',
+          email: 'waiter@example.com',
+          firstName: 'Test',
+          lastName: 'Waiter',
+          role: 'waiter',
+          assignedTables: [1, 2, 3],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },   
+        cashier: {
+          id: 'test-cashier-1',
+          email: 'cashier@example.com',
+          firstName: 'Test',
+          lastName: 'Cashier',
+          role: 'cashier',
+          assignedTables: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
       };
-      res.json(mockUser);
+      
+      res.json(mockUsers[role as keyof typeof mockUsers] || mockUsers.manager);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Logout route
+  app.get('/api/logout', async (req: any, res) => {
+    try {
+      // Clear any session data if using sessions
+      if (req.session) {
+        req.session.destroy((err: any) => {
+          if (err) {
+            console.error('Session destroy error:', err);
+          }
+        });
+      }
+      
+      // Clear cookies
+      res.clearCookie('connect.sid');
+      res.clearCookie('session');
+      
+      // Redirect to landing page with logout flag
+      res.redirect('/?logout=true');
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
+  // Login route with role selection
+  app.post('/api/login', async (req: any, res) => {
+    try {
+      const { role } = req.body;
+      if (!['manager', 'waiter', 'cashier'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      // Store role in session for demo
+      if (!req.session) req.session = {};
+      req.session.userRole = role;
+      
+      res.json({ success: true, role });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
     }
   });
 
