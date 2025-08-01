@@ -319,7 +319,15 @@ export default function ManagerDashboard() {
       const tableOrders = orders.filter(order => order.tableNumber === table.number);
       const activeOrder = tableOrders.find(order => order.status !== "served");
       const completedOrders = tableOrders.filter(order => order.status === "served");
-      const totalRevenue = completedOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      
+      // Calculate total revenue from order items and their prices
+      const totalRevenue = completedOrders.reduce((sum, order) => {
+        const orderTotal = (order.items || []).reduce((orderSum, item) => {
+          const itemPrice = item.menuItem?.price || 0;
+          return orderSum + (itemPrice * item.quantity);
+        }, 0);
+        return sum + orderTotal;
+      }, 0);
       
       let waitingTime = 0;
       if (activeOrder) {
