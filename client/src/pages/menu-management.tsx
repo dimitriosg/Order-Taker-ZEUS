@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, ImageIcon, Tag, DollarSign, ArrowLeft, FolderPlus, Trash, PencilIcon } from "lucide-react";
+import { Plus, Edit, Trash2, ImageIcon, Tag, DollarSign, ArrowLeft, FolderPlus, Trash, PencilIcon, ArrowUpDown } from "lucide-react";
 import { useLocation } from "wouter";
+import CategoryOrderModal from "@/components/CategoryOrderModal";
 
 interface MenuItem {
   id: string;
@@ -37,6 +38,7 @@ export default function MenuManagement() {
   const [showEditCategoryDialog, setShowEditCategoryDialog] = useState(false);
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [showSingleDeleteDialog, setShowSingleDeleteDialog] = useState(false);
+  const [showCategoryOrderModal, setShowCategoryOrderModal] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -387,7 +389,7 @@ export default function MenuManagement() {
       onSuccess: (results) => {
         const failedItems = results.filter(r => r.status === 'fulfilled' && !r.value.success);
         const constraintFailures = failedItems.filter(r => 
-          r.status === 'fulfilled' && r.value.error?.code === 'FOREIGN_KEY_CONSTRAINT'
+          r.status === 'fulfilled' && r.value.error && (r.value.error as any).code === 'FOREIGN_KEY_CONSTRAINT'
         );
         
         if (constraintFailures.length > 0 && !force) {
@@ -464,6 +466,14 @@ export default function MenuManagement() {
         </div>
         
         <div className="flex space-x-2">
+          <Button 
+            variant="outline"
+            onClick={() => setShowCategoryOrderModal(true)}
+          >
+            <ArrowUpDown className="w-4 h-4 mr-2" />
+            Arrange Categories
+          </Button>
+          
           <Dialog open={showAddCategoryDialog} onOpenChange={setShowAddCategoryDialog}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -922,6 +932,12 @@ export default function MenuManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Category Order Modal */}
+      <CategoryOrderModal 
+        open={showCategoryOrderModal} 
+        onClose={() => setShowCategoryOrderModal(false)} 
+      />
     </div>
   );
 }

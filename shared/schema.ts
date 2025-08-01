@@ -40,6 +40,14 @@ export const tables = pgTable("tables", {
   status: tableStatusEnum("status").notNull().default("free"),
 });
 
+export const categories = pgTable("categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
 export const menuItems = pgTable("menu_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -86,6 +94,12 @@ export const upsertUserSchema = createInsertSchema(users).omit({
 
 export const insertTableSchema = createInsertSchema(tables).omit({
   id: true,
+});
+
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
@@ -143,6 +157,8 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type Table = typeof tables.$inferSelect;
 export type InsertTable = z.infer<typeof insertTableSchema>;
+export type Category = typeof categories.$inferSelect;
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type MenuItem = typeof menuItems.$inferSelect;
 export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
 export type Order = typeof orders.$inferSelect;

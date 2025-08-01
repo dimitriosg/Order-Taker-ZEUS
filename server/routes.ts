@@ -2,7 +2,7 @@ import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertOrderSchema, insertOrderItemSchema, insertTableSchema, insertMenuItemSchema } from "@shared/schema";
+import { insertOrderSchema, insertOrderItemSchema, insertTableSchema, insertMenuItemSchema, insertCategorySchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -268,6 +268,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(categories);
     } catch (error) {
       console.error("Error fetching categories:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Category management routes
+  app.get('/api/categories', async (req, res) => {
+    try {
+      const categories = await storage.getAllCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/categories', async (req, res) => {
+    try {
+      const validatedData = insertCategorySchema.parse(req.body);
+      const category = await storage.createCategory(validatedData);
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/categories/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const category = await storage.updateCategory(id, updates);
+      res.json(category);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.put('/api/categories/reorder', async (req, res) => {
+    try {
+      const { categoryOrders } = req.body;
+      await storage.updateCategoryOrder(categoryOrders);
+      res.json({ message: 'Category order updated successfully' });
+    } catch (error) {
+      console.error("Error updating category order:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.delete('/api/categories/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCategory(id);
+      res.json({ message: 'Category deleted successfully' });
+    } catch (error) {
+      console.error("Error deleting category:", error);
       res.status(500).json({ message: 'Server error' });
     }
   });

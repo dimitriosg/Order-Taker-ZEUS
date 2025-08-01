@@ -3,6 +3,8 @@ import {
   type UpsertUser,
   type Table, 
   type InsertTable, 
+  type Category,
+  type InsertCategory,
   type MenuItem, 
   type InsertMenuItem, 
   type Order, 
@@ -11,6 +13,7 @@ import {
   type InsertOrderItem, 
   users, 
   tables, 
+  categories,
   menuItems, 
   orders, 
   orderItems 
@@ -35,13 +38,20 @@ export interface IStorage {
   updateTableStatus(tableNumber: number, status: "free" | "occupied"): Promise<Table>;
   updateTableName(id: string, name: string): Promise<Table>;
 
+  // Categories
+  getAllCategories(): Promise<Category[]>;
+  createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: string, updates: Partial<InsertCategory>): Promise<Category>;
+  updateCategoryOrder(categoryOrders: { id: string; sortOrder: number }[]): Promise<void>;
+  deleteCategory(id: string): Promise<void>;
+  getCategories(): Promise<string[]>; // Legacy method for backwards compatibility
+
   // Menu Items
   getAllMenuItems(): Promise<MenuItem[]>;
   getMenuItemsByCategory(category: string): Promise<MenuItem[]>;
   createMenuItem(item: InsertMenuItem): Promise<MenuItem>;
   updateMenuItem(id: string, updates: Partial<InsertMenuItem>): Promise<MenuItem>;
   deleteMenuItem(id: string): Promise<void>;
-  getCategories(): Promise<string[]>;
 
   // Orders
   createOrder(order: InsertOrder): Promise<Order>;
@@ -197,12 +207,76 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orderItems.menuItemId, menuItemId));
   }
 
-  async getCategories(): Promise<string[]> {
+  // Categories
+  async getAllCategories(): Promise<Category[]> {
     const results = await db
-      .selectDistinct({ category: menuItems.category })
-      .from(menuItems)
-      .orderBy(menuItems.category);
-    return results.map(r => r.category);
+      .select()
+      .from(categories)
+      .orderBy(categories.sortOrder, categories.name);
+    return results;
+  }
+
+  async createCategory(category: InsertCategory): Promise<Category> {
+    const [result] = await db
+      .insert(categories)
+      .values(category)
+      .returning();
+    return result;
+  }
+
+  async updateCategory(id: string, updates: Partial<InsertCategory>): Promise<Category> {
+    const [result] = await db
+      .update(categories)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(categories.id, id))
+      .returning();
+    return result;
+  }
+
+  async updateCategoryOrder(categoryOrders: { id: string; sortOrder: number }[]): Promise<void> {
+    for (const { id, sortOrder } of categoryOrders) {
+      await db
+        .update(categories)
+        .set({ sortOrder, updatedAt: new Date() })
+        .where(eq(categories.id, id));
+    }
+  }
+
+  async deleteCategory(id: string): Promise<void> {
+    await db
+      .delete(categories)
+      .where(eq(categories.id, id));
+  }
+
+  // Legacy method for backwards compatibility
+  async getCategories(): Promise<string[]> {
+    // First try to get from categories table (ordered)
+    const orderedCategories = await db
+      .select({ name: categories.name })
+      .from(categories)
+      .orderBy(categories.sortOrder, categories.name);
+    
+    if (orderedCategories.length > 0) {
+      // Also get categories that exist in menu items but not in categories table
+      const menuCategories = await db
+        .selectDistinct({ category: menuItems.category })
+        .from(menuItems);
+      
+      const categoriesFromTable = orderedCategories.map(c => c.name);
+      const menuCategoriesList = menuCategories.map(c => c.category);
+      
+      // Add any menu categories that aren't in the categories table
+      const missingCategories = menuCategoriesList.filter(c => !categoriesFromTable.includes(c));
+      
+      return [...categoriesFromTable, ...missingCategories.sort()];
+    } else {
+      // Fallback to menu items approach if no categories in table
+      const results = await db
+        .selectDistinct({ category: menuItems.category })
+        .from(menuItems)
+        .orderBy(menuItems.category);
+      return results.map(r => r.category);
+    }
   }
 
   // Helper to generate custom order ID in format DD-TT-NNNN
