@@ -312,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: 'Menu item deleted successfully' });
     } catch (error) {
       console.error("Error deleting menu item:", error);
-      if (error.code === '23503') {
+      if (error && typeof error === 'object' && 'code' in error && error.code === '23503') {
         res.status(409).json({ 
           message: "Cannot delete menu item: it is referenced in existing orders",
           code: "FOREIGN_KEY_CONSTRAINT"

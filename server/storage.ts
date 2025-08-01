@@ -54,6 +54,7 @@ export interface IStorage {
   // Order Items
   createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
   getOrderItemsByOrderId(orderId: string): Promise<OrderItem[]>;
+  deleteOrderItemsByMenuItemId(menuItemId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
