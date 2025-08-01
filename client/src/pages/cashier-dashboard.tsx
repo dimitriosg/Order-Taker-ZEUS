@@ -51,7 +51,10 @@ export default function CashierDashboard() {
       await apiRequest("POST", "/api/logout");
       // Clear all cached data
       queryClient.clear();
-      // Redirect to landing page
+      // Clear any localStorage data
+      localStorage.removeItem('mockUserRole');
+      localStorage.removeItem('auth_token');
+      // Force page reload to reset all state
       window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
