@@ -20,6 +20,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lt } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export interface IStorage {
   // Users - updated for Replit Auth
@@ -29,7 +30,7 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserTables(userId: string, assignedTables: number[]): Promise<User>;
   getAllUsers(): Promise<User[]>;
-  updateStaff(id: string, updates: { name?: string; role?: string; password?: string }): Promise<User>;
+  updateStaff(id: string, updates: { name?: string; firstName?: string; lastName?: string; email?: string; role?: string; password?: string; profileImageUrl?: string }): Promise<User>;
   deleteStaff(id: string): Promise<void>;
 
   // Tables
@@ -162,11 +163,11 @@ export class DatabaseStorage implements IStorage {
     if (data.role !== undefined) updateData.role = data.role;
     if (data.profileImageUrl !== undefined) updateData.profileImageUrl = data.profileImageUrl;
     
-    // Handle password if provided (passwords are handled differently in this demo system)
+    // Handle password if provided - hash it before storing
     if (data.password !== undefined) {
-      // For this demo system, we don't actually store hashed passwords in the database
-      // The authentication is handled through demo credentials in the routes
       console.log('Password update requested for user:', id);
+      const saltRounds = 10;
+      updateData.passwordHash = await bcrypt.hash(data.password, saltRounds);
     }
 
     const [user] = await db

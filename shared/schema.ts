@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  passwordHash: varchar("password_hash"), // For storing hashed passwords
   role: roleEnum("role").notNull().default("waiter"),
   assignedTables: integer("assigned_tables").array(),
   createdAt: timestamp("created_at").defaultNow(),

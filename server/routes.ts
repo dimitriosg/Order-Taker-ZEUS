@@ -278,17 +278,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Support both username/password login and legacy role-based login
       if (username && password) {
-        // Username/password authentication
-        for (const [checkRole, credentials] of Object.entries(demoCredentials)) {
-          console.log(`Checking ${checkRole}:`, { 
-            expected: credentials, 
-            received: { username, password: '[HIDDEN]' },
-            match: credentials.username === username && credentials.password === password
-          });
-          if (credentials.username === username && credentials.password === password) {
-            userRole = checkRole;
-            userId = `test-${checkRole}-1`;
-            break;
+        // Try database authentication first (for users who changed their passwords)
+        try {
+          const dbUser = await storage.getUserByEmail(username);
+          if (dbUser && dbUser.passwordHash) {
+            const passwordMatch = await require('bcryptjs').compare(password, dbUser.passwordHash);
+            if (passwordMatch) {
+              userRole = dbUser.role;
+              userId = dbUser.id;
+            }
+          }
+        } catch (dbError) {
+          console.log('Database auth failed, trying demo credentials:', dbError.message);
+        }
+        
+        // If database auth failed, try demo credentials
+        if (!userRole) {
+          for (const [checkRole, credentials] of Object.entries(demoCredentials)) {
+            console.log(`Checking ${checkRole}:`, { 
+              expected: credentials, 
+              received: { username, password: '[HIDDEN]' },
+              match: credentials.username === username && credentials.password === password
+            });
+            if (credentials.username === username && credentials.password === password) {
+              userRole = checkRole;
+              userId = `test-${checkRole}-1`;
+              break;
+            }
           }
         }
         
