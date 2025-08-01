@@ -5,7 +5,10 @@ import { useSocket } from "@/contexts/SocketContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScanBarcode, Clock, Check, Receipt, LogOut, Bell, User, DollarSign, ShoppingCart } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScanBarcode, Clock, Check, Receipt, LogOut, Bell, User, DollarSign, ShoppingCart, Settings } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileModal } from "@/components/ProfileModal";
@@ -49,6 +52,12 @@ export default function CashierDashboard() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showTillModal, setShowTillModal] = useState(false);
+  const [tillStartAmount, setTillStartAmount] = useState<number>(() => {
+    const saved = localStorage.getItem('tillStartAmount');
+    return saved ? parseFloat(saved) : 0;
+  });
+  const [tillInput, setTillInput] = useState<string>("");
 
   // Fetch orders by status
   const { data: newOrders = [] } = useQuery<Order[]>({
@@ -75,13 +84,13 @@ export default function CashierDashboard() {
 
   // Calculate statistics
   const activeOrders = [...newOrders, ...inPrepOrders, ...readyOrders];
-  const totalCashReceived = allOrdersData.reduce((total, order) => total + (order.cashReceived || 0), 0);
   const totalOrderValue = allOrdersData.reduce((total, order) => 
     total + (order.items || []).reduce((orderTotal, item) => 
       orderTotal + ((item.menuItem?.price || 0) * item.quantity), 0
     ), 0
   );
   const totalOrdersReceived = allOrdersData.length;
+  const currentTillTotal = tillStartAmount + totalOrderValue;
 
   // Update order status mutation
   const updateStatusMutation = useMutation({
@@ -129,6 +138,20 @@ export default function CashierDashboard() {
     };
   }, [socket, queryClient, toast]);
 
+  const handleTillStart = () => {
+    const amount = parseFloat(tillInput);
+    if (!isNaN(amount) && amount >= 0) {
+      setTillStartAmount(amount);
+      localStorage.setItem('tillStartAmount', amount.toString());
+      setShowTillModal(false);
+      setTillInput("");
+      toast({
+        title: "Till amount set",
+        description: `Starting amount set to $${amount.toFixed(2)}`,
+      });
+    }
+  };
+
   const stats = {
     newOrders: newOrders.length,
     inPrep: inPrepOrders.length,
@@ -155,6 +178,9 @@ export default function CashierDashboard() {
               <span className="text-sm text-gray-600">
                 {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Cashier'}
               </span>
+              <Button variant="ghost" onClick={() => setShowTillModal(true)} size="sm">
+                <Settings className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" onClick={() => setShowProfileModal(true)} size="sm">
                 <User className="h-4 w-4" />
               </Button>
@@ -167,7 +193,58 @@ export default function CashierDashboard() {
       </header>
 
       <div className="p-4 lg:p-6">
-        {/* Statistics */}
+        {/* Till and Order Summary - First Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Till Starting Amount</p>
+                <p className="text-2xl font-bold text-green-600">${tillStartAmount.toFixed(2)}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Order Value</p>
+                <p className="text-2xl font-bold text-blue-600">${totalOrderValue.toFixed(2)}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Receipt className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Current Till Total</p>
+                <p className="text-2xl font-bold text-emerald-600">${currentTillTotal.toFixed(2)}</p>
+              </div>
+              <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-emerald-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Orders</p>
+                <p className="text-2xl font-bold text-purple-600">{totalOrdersReceived}</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <Receipt className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Order Status Summary - Second Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
@@ -215,66 +292,14 @@ export default function CashierDashboard() {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 bg-purple-100 rounded-lg">
-                  <Receipt className="text-purple-600 text-xl" />
+                  <ShoppingCart className="text-purple-600 text-xl" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Active Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalToday}</p>
+                  <p className="text-2xl font-bold text-gray-900">{activeOrders.length}</p>
                 </div>
               </div>
             </CardContent>
-          </Card>
-        </div>
-
-        {/* Order Columns */}
-        {/* Cash Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Cash Received</p>
-                <p className="text-2xl font-bold text-green-600">${totalCashReceived.toFixed(2)}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Order Value</p>
-                <p className="text-2xl font-bold text-blue-600">${totalOrderValue.toFixed(2)}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Receipt className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active Orders</p>
-                <p className="text-2xl font-bold text-amber-600">{activeOrders.length}</p>
-              </div>
-              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                <ShoppingCart className="w-6 h-6 text-amber-600" />
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Orders</p>
-                <p className="text-2xl font-bold text-purple-600">{totalOrdersReceived}</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <Receipt className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
           </Card>
         </div>
 
@@ -534,6 +559,62 @@ export default function CashierDashboard() {
         open={showProfileModal}
         onOpenChange={setShowProfileModal}
       />
+
+      {/* Till Settings Modal */}
+      <Dialog open={showTillModal} onOpenChange={setShowTillModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Till Settings</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <p className="text-sm text-gray-600 mb-2">Current Till Total</p>
+              <p className="text-3xl font-bold text-green-600">${currentTillTotal.toFixed(2)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Start: ${tillStartAmount.toFixed(2)} + Orders: ${totalOrderValue.toFixed(2)}
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="tillAmount">Set Starting Till Amount</Label>
+              <div className="mt-2">
+                <Input
+                  id="tillAmount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={tillInput}
+                  onChange={(e) => setTillInput(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Enter the amount of cash you started with in the till
+              </p>
+            </div>
+
+            <div className="flex space-x-2">
+              <Button
+                onClick={handleTillStart}
+                disabled={!tillInput || isNaN(parseFloat(tillInput))}
+                className="flex-1"
+              >
+                Set Amount
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowTillModal(false);
+                  setTillInput("");
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
