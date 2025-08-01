@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,23 +9,32 @@ import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+interface User {
+  id: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  role: "waiter" | "cashier" | "manager";
+}
+
 export function ProfileEditForm() {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth() as { user: User | undefined };
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [displayName, setDisplayName] = useState(user?.name || "");
+  const [displayName, setDisplayName] = useState(user?.firstName || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: { name?: string; password?: string }) => {
-      const response = await apiRequest("PUT", "/api/profile", data);
+      const response = await apiRequest("PUT", `/api/staff/${user?.id}`, data);
       return response.json();
     },
-    onSuccess: (data) => {
-      updateUser(data.user);
-      queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully",
@@ -83,7 +92,7 @@ export function ProfileEditForm() {
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium text-gray-600">Username</Label>
-                <div className="mt-1 text-sm text-gray-900">@{user?.username}</div>
+                <div className="mt-1 text-sm text-gray-900">{user?.email}</div>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-600">Role</Label>

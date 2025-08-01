@@ -11,18 +11,44 @@ import { AddTableModal } from "@/components/AddTableModal";
 import { BatchTableModal } from "@/components/BatchTableModal";
 import { BatchAssignModal } from "@/components/BatchAssignModal";
 import { ProfileModal } from "@/components/ProfileModal";
+import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { EditUserModal } from "@/components/EditUserModal";
 import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+interface Order {
+  id: string;
+  tableNumber: number;
+  status: "paid" | "in-prep" | "ready" | "served";
+  waiterId?: string | null;
+  cashierId?: string | null;
+  paid: boolean;
+  cashReceived?: number | null;
+  createdAt?: string;
+  totalAmount?: number;
+  items?: OrderItem[];
+}
+
+interface OrderItem {
+  id: string;
+  orderId: string;
+  menuItemId: string;
+  quantity: number;
+  notes?: string | null;
+}
+
 interface Staff {
   id: string;
-  username: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
   role: "waiter" | "cashier" | "manager";
   assignedTables?: number[] | null;
-  name?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface TableData {
@@ -33,7 +59,7 @@ interface TableData {
 }
 
 export default function ManagerDashboard() {
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: Staff | undefined };
   
   const logout = () => {
     window.location.href = "/api/logout";
@@ -283,8 +309,7 @@ export default function ManagerDashboard() {
         totalRevenue,
         completedOrdersCount: completedOrders.length,
         waitingTime,
-        status: activeOrder ? 
-          (activeOrder.status === "ready" ? "ready" : "occupied") : "free"
+        status: (activeOrder ? "occupied" : "free") as "free" | "occupied"
       };
     });
   };
@@ -309,9 +334,14 @@ export default function ManagerDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Manager'}
+                {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email || 'Manager'}
               </span>
-              <Button variant="ghost" onClick={() => setActiveView("profile")} size="sm">
+              <Button 
+                variant="ghost" 
+                onClick={() => setActiveView("profile")} 
+                size="sm"
+                className={activeView === "profile" ? "bg-gray-100" : ""}
+              >
                 <User className="h-4 w-4" />
               </Button>
               <Button variant="ghost" onClick={logout} size="sm">
@@ -367,9 +397,9 @@ export default function ManagerDashboard() {
               Table Assignment
             </Button>
             <Button
-              variant="ghost"
-              className="w-full justify-start hover:bg-gray-100"
-              onClick={() => setShowProfileModal(true)}
+              variant={activeView === "profile" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => setActiveView("profile")}
             >
               <User className="mr-3 h-4 w-4" />
               Edit Profile
@@ -577,12 +607,12 @@ export default function ManagerDashboard() {
                       className="w-full bg-emerald-600 hover:bg-emerald-700"
                       onClick={() => downloadCSV(
                         staff.map(member => ({
-                          Username: member.username,
-                          'Display Name': member.name || 'Not set',
+                          Email: member.email,
+                          'Display Name': member.firstName || 'Not set',
                           Role: member.role,
                           'Assigned Tables': member.assignedTables?.join(', ') || 'All Tables',
                           Status: 'Active',
-                          'Created Date': new Date(member.createdAt || new Date()).toLocaleDateString()
+                          'Created Date': new Date(member.createdAt || Date.now()).toLocaleDateString()
                         })), 
                         'staff_performance_report'
                       )}
@@ -606,7 +636,6 @@ export default function ManagerDashboard() {
                         tables.map(table => ({
                           'Table Number': table.number,
                           Status: table.status,
-                          'Created Date': new Date(table.createdAt || new Date()).toLocaleDateString(),
                           'Current Occupancy': table.status === 'occupied' ? 'Yes' : 'No'
                         })), 
                         'table_utilization_report'
@@ -1171,7 +1200,19 @@ export default function ManagerDashboard() {
             </div>
           )}
 
-
+          {activeView === "profile" && (
+            <div>
+              <Card>
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-xl font-bold text-gray-900">Edit Profile</h2>
+                  <p className="text-sm text-gray-600 mt-1">Update your personal information and account settings</p>
+                </div>
+                <div className="p-6">
+                  <ProfileEditForm />
+                </div>
+              </Card>
+            </div>
+          )}
         </main>
       </div>
 
@@ -1233,10 +1274,7 @@ export default function ManagerDashboard() {
         }}
         user={selectedUser}
       />
-      <ProfileModal
-        open={showProfileModal}
-        onOpenChange={setShowProfileModal}
-      />
+
 
     </div>
   );
