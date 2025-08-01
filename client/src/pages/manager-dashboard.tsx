@@ -185,6 +185,17 @@ export default function ManagerDashboard() {
     return `Table ${table.number}`;
   };
 
+  // Format user display name
+  const getUserDisplayName = (user: Staff) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.firstName) {
+      return user.firstName;
+    }
+    return user.email || 'Unknown User';
+  };
+
   // Handle table name edit
   const handleTableNameEdit = (table: TableData) => {
     setEditingTableId(table.id);
@@ -1026,7 +1037,7 @@ export default function ManagerDashboard() {
                       <div key={waiter.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h3 className="font-semibold text-gray-900">{waiter.username}</h3>
+                            <h3 className="font-semibold text-gray-900">{getUserDisplayName(waiter)}</h3>
                             <p className="text-sm text-gray-600">Waiter</p>
                           </div>
                           <Badge variant="secondary">Active</Badge>
@@ -1243,7 +1254,7 @@ export default function ManagerDashboard() {
         open={showAssignTableModal} 
         onOpenChange={setShowAssignTableModal}
         waiterId={selectedWaiterForAssignment}
-        waiterName={staff.find(s => s.id === selectedWaiterForAssignment)?.firstName || 'Waiter'}
+        waiterName={selectedWaiterForAssignment ? getUserDisplayName(staff.find(s => s.id === selectedWaiterForAssignment)!) : 'Waiter'}
         existingTables={tables.map(t => t.number)}
         assignedTables={staff.find(s => s.id === selectedWaiterForAssignment)?.assignedTables || []}
         onSubmit={(tables) => {

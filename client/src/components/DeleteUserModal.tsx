@@ -7,10 +7,14 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Staff {
   id: string;
-  username: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
   role: "waiter" | "cashier" | "manager";
   assignedTables?: number[] | null;
-  name?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface DeleteUserModalProps {
@@ -52,7 +56,17 @@ export function DeleteUserModal({ isOpen, onClose, user }: DeleteUserModalProps)
 
   if (!user) return null;
 
-  const displayName = user.name ? `${user.name} (@${user.username})` : `@${user.username}`;
+  const getUserDisplayName = (user: Staff) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.firstName) {
+      return user.firstName;
+    }
+    return user.email || 'Unknown User';
+  };
+
+  const displayName = getUserDisplayName(user);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

@@ -10,10 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Staff {
   id: string;
-  username: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
   role: "waiter" | "cashier" | "manager";
   assignedTables?: number[] | null;
-  name?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface EditUserModalProps {
@@ -27,7 +31,8 @@ export function EditUserModal({ isOpen, onClose, user }: EditUserModalProps) {
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
-    name: user?.name || "",
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
     role: user?.role || "waiter"
   });
 
@@ -35,14 +40,15 @@ export function EditUserModal({ isOpen, onClose, user }: EditUserModalProps) {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || "",
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
         role: user.role
       });
     }
   }, [user]);
 
   const updateUserMutation = useMutation({
-    mutationFn: async (data: { name: string; role: string }) => {
+    mutationFn: async (data: { firstName: string; lastName: string; role: string }) => {
       const response = await apiRequest("PUT", `/api/staff/${user?.id}`, data);
       return response.json();
     },
@@ -68,14 +74,16 @@ export function EditUserModal({ isOpen, onClose, user }: EditUserModalProps) {
     if (!user) return;
     
     updateUserMutation.mutate({
-      name: formData.name.trim(),
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
       role: formData.role
     });
   };
 
   const handleClose = () => {
     setFormData({
-      name: user?.name || "",
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
       role: user?.role || "waiter"
     });
     onClose();
@@ -91,23 +99,33 @@ export function EditUserModal({ isOpen, onClose, user }: EditUserModalProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="username"
-              value={user.username}
+              id="email"
+              value={user.email || ''}
               disabled
               className="bg-gray-100"
             />
-            <p className="text-xs text-gray-500 mt-1">Username cannot be changed</p>
+            <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
           </div>
           
           <div>
-            <Label htmlFor="name">Display Name</Label>
+            <Label htmlFor="firstName">First Name</Label>
             <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Enter display name (optional)"
+              id="firstName"
+              value={formData.firstName}
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              placeholder="Enter first name"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              id="lastName"
+              value={formData.lastName}
+              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              placeholder="Enter last name"
             />
           </div>
           
