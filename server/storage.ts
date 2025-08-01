@@ -16,7 +16,7 @@ import {
   orderItems 
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lt } from "drizzle-orm";
 
 export interface IStorage {
   // Users - updated for Replit Auth
@@ -198,10 +198,38 @@ export class DatabaseStorage implements IStorage {
     return results.map(r => r.category);
   }
 
+  // Helper to generate custom order ID in format DD-TT-NNNN
+  private async generateOrderId(tableNumber: number): Promise<string> {
+    const now = new Date();
+    const day = now.getDate().toString().padStart(2, '0');
+    const table = tableNumber.toString().padStart(2, '0');
+    
+    // Get today's orders to determine next sequence number
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+    
+    const todayOrders = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(
+        and(
+          gte(orders.createdAt, todayStart),
+          lt(orders.createdAt, todayEnd)
+        )
+      );
+    
+    const nextSequence = (todayOrders.length + 1).toString().padStart(4, '0');
+    return `${day}-${table}-${nextSequence}`;
+  }
+
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    // Generate custom order ID
+    const customId = await this.generateOrderId(insertOrder.tableNumber);
+    
     const [order] = await db
       .insert(orders)
-      .values(insertOrder)
+      .values({ ...insertOrder, id: customId })
       .returning();
     return order;
   }

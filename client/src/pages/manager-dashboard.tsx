@@ -976,7 +976,7 @@ export default function ManagerDashboard() {
                           <>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-gray-600">Current Order:</span>
-                              <span className="text-sm font-medium">#{table.activeOrder.id.slice(-6)}</span>
+                              <span className="text-sm font-medium">#{table.activeOrder.id}</span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-gray-600">Status:</span>
