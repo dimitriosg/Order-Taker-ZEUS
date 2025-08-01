@@ -34,7 +34,7 @@ interface Order {
 }
 
 export default function WaiterDashboard() {
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: any };
   
   const logout = () => {
     window.location.href = "/api/logout";
@@ -57,6 +57,11 @@ export default function WaiterDashboard() {
   // Fetch waiter's orders
   const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
+  });
+
+  // Fetch staff to show table assignments
+  const { data: staff = [], isLoading: staffLoading } = useQuery<any[]>({
+    queryKey: ["/api/staff"],
   });
 
   // Mark order as served mutation
@@ -108,14 +113,42 @@ export default function WaiterDashboard() {
       }
     };
 
+    const handleCrossWaiterOrder = (data: any) => {
+      // Only show notification if this is for the assigned waiter
+      if (data.assignedWaiterId === user?.id) {
+        queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
+        
+        toast({
+          title: "Order Taken on Your Behalf",
+          description: data.message,
+          duration: 8000, // Show longer for important notifications
+        });
+      }
+    };
+
     socket.on("orderStatusUpdated", handleOrderUpdate);
+    socket.on("cross_waiter_order", handleCrossWaiterOrder);
 
     return () => {
       socket.off("orderStatusUpdated", handleOrderUpdate);
+      socket.off("cross_waiter_order", handleCrossWaiterOrder);
     };
-  }, [socket, queryClient, toast]);
+  }, [socket, queryClient, toast, user?.id]);
 
   const handleTableSelect = (tableNumber: number) => {
+    const assignedWaiter = getTableAssignedWaiter(tableNumber);
+    const isMyTable = user?.assignedTables?.includes(tableNumber);
+    
+    // If taking order for someone else's table, show confirmation
+    if (assignedWaiter && !isMyTable) {
+      const confirmed = window.confirm(
+        `This table is assigned to ${getUserDisplayName(assignedWaiter)}. ` +
+        `Taking this order will notify them that you've handled it on their behalf. Continue?`
+      );
+      if (!confirmed) return;
+    }
+    
     setSelectedTable(tableNumber);
     setShowOrderModal(true);
   };
@@ -137,7 +170,8 @@ export default function WaiterDashboard() {
     return { status: "free", color: "green" };
   };
 
-  const filteredTables = tables; // Show all tables for testing
+  // Show all tables but indicate accessibility
+  const filteredTables = tables;
 
   const activeOrders = orders.filter(order => order.status !== "served");
 
@@ -169,7 +203,36 @@ export default function WaiterDashboard() {
     setEditingTableName("");
   };
 
-  if (tablesLoading || ordersLoading) {
+  // Get assigned waiter for a table
+  const getTableAssignedWaiter = (tableNumber: number) => {
+    return staff.find(s => s.role === 'waiter' && s.assignedTables?.includes(tableNumber));
+  };
+
+  // Check if current user can take orders for this table
+  const canTakeOrderForTable = (tableNumber: number) => {
+    const assignedWaiter = getTableAssignedWaiter(tableNumber);
+    const hasActiveOrder = orders.some(order => 
+      order.tableNumber === tableNumber && order.status !== "served"
+    );
+    
+    // Can take order if: assigned to this table, OR no one assigned, OR table has active order (cross-waiter support)
+    return !assignedWaiter || 
+           (user?.assignedTables?.includes(tableNumber)) || 
+           hasActiveOrder;
+  };
+
+  // Get user display name
+  const getUserDisplayName = (user: any) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.firstName) {
+      return user.firstName;
+    }
+    return user.email || 'Unknown';
+  };
+
+  if (tablesLoading || ordersLoading || staffLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
@@ -320,6 +383,36 @@ export default function WaiterDashboard() {
                           {status === "ready" ? "Order Ready" :
                            status === "occupied" ? "Occupied" : "Available"}
                         </p>
+                        
+                        {/* Show assignment information */}
+                        {(() => {
+                          const assignedWaiter = getTableAssignedWaiter(table.number);
+                          const isMyTable = user?.assignedTables?.includes(table.number);
+                          const hasActiveOrder = orders.some(order => 
+                            order.tableNumber === table.number && order.status !== "served"
+                          );
+                          const activeOrder = orders.find(order => 
+                            order.tableNumber === table.number && order.status !== "served"
+                          );
+                          
+                          if (isMyTable) {
+                            return <p className="text-xs text-blue-600 mt-1">Your table</p>;
+                          } else if (assignedWaiter) {
+                            return (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Assigned: {getUserDisplayName(assignedWaiter)}
+                              </p>
+                            );
+                          } else if (hasActiveOrder && activeOrder?.waiterId !== user?.id) {
+                            const orderWaiter = staff.find(s => s.id === activeOrder?.waiterId);
+                            return (
+                              <p className="text-xs text-orange-600 mt-1">
+                                Order by: {orderWaiter ? getUserDisplayName(orderWaiter) : 'Other waiter'}
+                              </p>
+                            );
+                          }
+                          return <p className="text-xs text-gray-400 mt-1">Unassigned</p>;
+                        })()}
                       </CardContent>
                     </Card>
                   );

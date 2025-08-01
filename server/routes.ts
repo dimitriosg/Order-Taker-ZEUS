@@ -304,13 +304,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'User already exists' });
       }
 
-      // Create new staff member
+      // Create new staff member with no assigned tables for waiters
       const newStaff = await storage.createUser({
         email: username,
         firstName: null,
         lastName: null,
         profileImageUrl: null,
-        role: role as "waiter" | "cashier" | "manager"
+        role: role as "waiter" | "cashier" | "manager",
+        assignedTables: role === 'waiter' ? [] : null
       });
 
       res.status(201).json({ message: 'Staff member created successfully', user: newStaff });
@@ -330,6 +331,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ message: 'No items provided' });
       }
+
+      // Check if table is assigned to someone else
+      const allStaff = await storage.getAllUsers();
+      const assignedWaiter = allStaff.find(s => 
+        s.role === 'waiter' && s.assignedTables?.includes(tableNumber)
+      );
+      const currentWaiter = allStaff.find(s => s.id === user.id);
 
       const order = await storage.createOrder({
         tableNumber,
@@ -363,6 +371,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'new_order',
         order: order
       });
+
+      // If this is cross-waiter ordering, notify the assigned waiter
+      if (assignedWaiter && assignedWaiter.id !== user.id) {
+        const waiterName = currentWaiter?.firstName || currentWaiter?.email || 'Another waiter';
+        broadcastToRole('waiter', {
+          type: 'cross_waiter_order',
+          order: order,
+          message: `${waiterName} took an order for your table ${tableNumber} while you were away`,
+          assignedWaiterId: assignedWaiter.id,
+          actualWaiterId: user.id
+        });
+      }
 
       res.status(201).json(order);
     } catch (error) {

@@ -13,15 +13,20 @@ interface AddStaffModalProps {
 }
 
 export function AddStaffModal({ onClose }: AddStaffModalProps) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [role, setRole] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const createStaffMutation = useMutation({
     mutationFn: async (staffData: { username: string; password: string; role: string }) => {
-      const response = await apiRequest("POST", "/api/register", staffData);
+      const response = await apiRequest("POST", "/api/register", {
+        username: staffData.username, // Map email to username for compatibility
+        password: "defaultPassword123", // Default password
+        role: staffData.role
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -44,16 +49,20 @@ export function AddStaffModal({ onClose }: AddStaffModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username || !password || !role) {
+    if (!email || !firstName || !role) {
       toast({
         title: "Missing fields",
-        description: "Please fill in all required fields",
+        description: "Please fill in email, first name, and role",
         variant: "destructive",
       });
       return;
     }
 
-    createStaffMutation.mutate({ username, password, role });
+    createStaffMutation.mutate({ 
+      username: email, // Use email as username
+      password: "defaultPassword123", // Default password
+      role 
+    });
   };
 
   return (
@@ -67,30 +76,43 @@ export function AddStaffModal({ onClose }: AddStaffModalProps) {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="staffUsername" className="block text-sm font-medium text-gray-700 mb-1">
-              Username
+            <Label htmlFor="staffEmail" className="block text-sm font-medium text-gray-700 mb-1">
+              Email
             </Label>
             <Input
-              id="staffUsername"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter username"
+              id="staffEmail"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter email address"
               required
             />
           </div>
           
           <div>
-            <Label htmlFor="staffPassword" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
+            <Label htmlFor="staffFirstName" className="block text-sm font-medium text-gray-700 mb-1">
+              First Name
             </Label>
             <Input
-              id="staffPassword"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
+              id="staffFirstName"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Enter first name"
               required
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="staffLastName" className="block text-sm font-medium text-gray-700 mb-1">
+              Last Name
+            </Label>
+            <Input
+              id="staffLastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Enter last name"
             />
           </div>
           

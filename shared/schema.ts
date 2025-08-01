@@ -76,7 +76,6 @@ export const insertUserSchema = createInsertSchema(users).omit({
 });
 
 export const upsertUserSchema = createInsertSchema(users).omit({
-  assignedTables: true,
   createdAt: true,
   updatedAt: true,
 });
