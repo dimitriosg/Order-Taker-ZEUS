@@ -67,7 +67,7 @@ export const orders = pgTable("orders", {
 export const orderItems = pgTable("order_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   orderId: varchar("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
-  menuItemId: varchar("menu_item_id").notNull().references(() => menuItems.id),
+  menuItemId: varchar("menu_item_id").notNull().references(() => menuItems.id, { onDelete: "restrict" }),
   quantity: integer("quantity").notNull(),
   notes: text("notes"),
 });

@@ -190,6 +190,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(menuItems.id, id));
   }
 
+  async deleteOrderItemsByMenuItemId(menuItemId: string): Promise<void> {
+    await db
+      .delete(orderItems)
+      .where(eq(orderItems.menuItemId, menuItemId));
+  }
+
   async getCategories(): Promise<string[]> {
     const results = await db
       .selectDistinct({ category: menuItems.category })

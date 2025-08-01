@@ -139,8 +139,13 @@ export default function MenuManagement() {
 
   // Delete menu item mutation
   const deleteItemMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiRequest("DELETE", `/api/menu/${id}`);
+    mutationFn: async ({ id, force = false }: { id: string, force?: boolean }) => {
+      const url = force ? `/api/menu/${id}?force=true` : `/api/menu/${id}`;
+      const response = await apiRequest("DELETE", url);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw { ...errorData, status: response.status };
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -151,11 +156,26 @@ export default function MenuManagement() {
         description: "The menu item has been removed successfully",
       });
     },
+    onError: (error: any) => {
+      if (error.code === "FOREIGN_KEY_CONSTRAINT") {
+        toast({
+          title: "Cannot delete menu item",
+          description: "This item is used in existing orders. You can mark it unavailable or force delete (which removes it from all orders).",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error deleting item",
+          description: error.message || "An error occurred while deleting the item",
+          variant: "destructive",
+        });
+      }
+    },
   });
 
   // Bulk delete mutation
   const bulkDeleteMutation = useMutation({
-    mutationFn: async ({ type, category }: {type: 'all' | 'category', category?: string}) => {
+    mutationFn: async ({ type, category, force = false }: {type: 'all' | 'category', category?: string, force?: boolean}) => {
       const itemsToDelete = type === 'all' 
         ? menuItems 
         : menuItems.filter(item => item.category === category);
@@ -163,7 +183,12 @@ export default function MenuManagement() {
       const results = await Promise.allSettled(
         itemsToDelete.map(async (item) => {
           try {
-            await apiRequest("DELETE", `/api/menu/${item.id}`);
+            const url = force ? `/api/menu/${item.id}?force=true` : `/api/menu/${item.id}`;
+            const response = await apiRequest("DELETE", url);
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw errorData;
+            }
             return { success: true, item: item.name };
           } catch (error) {
             return { success: false, item: item.name, error };
@@ -278,6 +303,32 @@ export default function MenuManagement() {
   const handleBulkDelete = (type: 'all' | 'category', category?: string) => {
     setDeleteTarget({ type, category });
     setShowDeleteConfirmDialog(true);
+  };
+
+  const executeBulkDelete = (force: boolean = false) => {
+    bulkDeleteMutation.mutate({
+      type: deleteTarget.type,
+      category: deleteTarget.category,
+      force
+    }, {
+      onSuccess: (results) => {
+        const failedItems = results.filter(r => r.status === 'fulfilled' && !r.value.success);
+        const constraintFailures = failedItems.filter(r => 
+          r.status === 'fulfilled' && r.value.error?.code === 'FOREIGN_KEY_CONSTRAINT'
+        );
+        
+        if (constraintFailures.length > 0 && !force) {
+          const forceDelete = confirm(
+            `${constraintFailures.length} items are used in existing orders and couldn't be deleted. Force delete will remove them from all orders. Continue?`
+          );
+          if (forceDelete) {
+            executeBulkDelete(true);
+            return;
+          }
+        }
+        setShowDeleteConfirmDialog(false);
+      }
+    });
   };
 
   const startEdit = (item: MenuItem) => {
@@ -628,10 +679,47 @@ export default function MenuManagement() {
                             </Button>
                             <Button
                               size="sm"
+                              variant={item.available ? "secondary" : "default"}
+                              onClick={async () => {
+                                try {
+                                  await apiRequest("PATCH", `/api/menu/${item.id}`, {
+                                    ...item,
+                                    available: !item.available
+                                  });
+                                  queryClient.invalidateQueries({ queryKey: ["/api/menu"] });
+                                  toast({
+                                    title: item.available ? "Item marked unavailable" : "Item marked available",
+                                    description: `${item.name} is now ${!item.available ? 'available' : 'unavailable'} for ordering`,
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to update item availability",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                            >
+                              {item.available ? "Disable" : "Enable"}
+                            </Button>
+                            <Button
+                              size="sm"
                               variant="outline"
                               onClick={() => {
-                                if (confirm(`Delete "${item.name}"?`)) {
-                                  deleteItemMutation.mutate(item.id);
+                                const shouldDelete = confirm(`Delete "${item.name}"?`);
+                                if (shouldDelete) {
+                                  deleteItemMutation.mutate({ id: item.id, force: false }, {
+                                    onError: (error: any) => {
+                                      if (error.code === "FOREIGN_KEY_CONSTRAINT") {
+                                        const forceDelete = confirm(
+                                          `"${item.name}" is used in existing orders. Force delete will remove it from all orders. Continue?`
+                                        );
+                                        if (forceDelete) {
+                                          deleteItemMutation.mutate({ id: item.id, force: true });
+                                        }
+                                      }
+                                    }
+                                  });
                                 }
                               }}
                             >
@@ -686,7 +774,7 @@ export default function MenuManagement() {
               </Button>
               <Button 
                 variant="destructive" 
-                onClick={() => bulkDeleteMutation.mutate(deleteTarget)}
+                onClick={() => executeBulkDelete(false)}
                 disabled={bulkDeleteMutation.isPending}
               >
                 {bulkDeleteMutation.isPending ? "Deleting..." : "Delete"}

@@ -301,11 +301,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/menu/:id', async (req, res) => {
     try {
       const { id } = req.params;
+      const forceDelete = req.query.force === 'true';
+      
+      if (forceDelete) {
+        // First, remove all order items that reference this menu item
+        await storage.deleteOrderItemsByMenuItemId(id);
+      }
+      
       await storage.deleteMenuItem(id);
       res.json({ message: 'Menu item deleted successfully' });
     } catch (error) {
       console.error("Error deleting menu item:", error);
-      res.status(500).json({ message: 'Server error' });
+      if (error.code === '23503') {
+        res.status(409).json({ 
+          message: "Cannot delete menu item: it is referenced in existing orders",
+          code: "FOREIGN_KEY_CONSTRAINT"
+        });
+      } else {
+        res.status(500).json({ message: 'Server error' });
+      }
     }
   });
 
