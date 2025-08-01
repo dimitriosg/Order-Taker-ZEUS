@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User, Download, TrendingUp, Clock, DollarSign, Settings, Receipt, Check } from "lucide-react";
+import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User, Download, TrendingUp, Clock, DollarSign, Settings, Receipt, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { AddStaffModal } from "@/components/AddStaffModal";
 import { AddTableModal } from "@/components/AddTableModal";
 import { BatchTableModal } from "@/components/BatchTableModal";
@@ -105,6 +105,7 @@ export default function ManagerDashboard() {
   const [currency, setCurrency] = useState("EUR");
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(10000); // 10 seconds default
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Fetch staff
   const { data: staff = [], isLoading: staffLoading } = useQuery<Staff[]>({
@@ -442,72 +443,94 @@ export default function ManagerDashboard() {
 
       <div className="flex flex-1">
         {/* Sidebar */}
-        <nav className="hidden lg:block w-64 bg-white shadow-sm">
+        <nav className={`hidden lg:block ${sidebarCollapsed ? 'w-16' : 'w-64'} bg-white shadow-sm transition-all duration-300 relative`}>
+          {/* Toggle Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute -right-3 top-4 z-10 w-6 h-6 rounded-full bg-white shadow-md border hover:bg-gray-50"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-3 w-3" />
+            ) : (
+              <ChevronLeft className="h-3 w-3" />
+            )}
+          </Button>
+          
           <div className="p-4 space-y-2">
             <Button
               variant={activeView === "overview" ? "default" : "ghost"}
-              className="w-full justify-start"
+              className={`w-full ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
               onClick={() => setActiveView("overview")}
+              title={sidebarCollapsed ? "Overview" : ""}
             >
-              <BarChart3 className="mr-3 h-4 w-4" />
-              Overview
+              <BarChart3 className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              {!sidebarCollapsed && "Overview"}
             </Button>
             <Button
               variant={activeView === "reports" ? "default" : "ghost"}
-              className="w-full justify-start"
+              className={`w-full ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
               onClick={() => setActiveView("reports")}
+              title={sidebarCollapsed ? "Reports" : ""}
             >
-              <Download className="mr-3 h-4 w-4" />
-              Reports
+              <Download className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              {!sidebarCollapsed && "Reports"}
             </Button>
             <Button
               variant={activeView === "monitor" ? "default" : "ghost"}
-              className="w-full justify-start"
+              className={`w-full ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
               onClick={() => setActiveView("monitor")}
+              title={sidebarCollapsed ? "Table Monitor" : ""}
             >
-              <Clock className="mr-3 h-4 w-4" />
-              Table Monitor
+              <Clock className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              {!sidebarCollapsed && "Table Monitor"}
             </Button>
             <Button
               variant={activeView === "staff" ? "default" : "ghost"}
-              className="w-full justify-start"
+              className={`w-full ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
               onClick={() => setActiveView("staff")}
+              title={sidebarCollapsed ? "Staff Management" : ""}
             >
-              <Users className="mr-3 h-4 w-4" />
-              Staff Management
+              <Users className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              {!sidebarCollapsed && "Staff Management"}
             </Button>
             <Button
               variant={activeView === "tables" ? "default" : "ghost"}
-              className="w-full justify-start"
+              className={`w-full ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
               onClick={() => setActiveView("tables")}
+              title={sidebarCollapsed ? "Table Assignment" : ""}
             >
-              <Table className="mr-3 h-4 w-4" />
-              Table Assignment
+              <Table className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              {!sidebarCollapsed && "Table Assignment"}
             </Button>
             <Button
               variant={activeView === "profile" ? "default" : "ghost"}
-              className="w-full justify-start"
+              className={`w-full ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
               onClick={() => setActiveView("profile")}
+              title={sidebarCollapsed ? "Edit Profile" : ""}
             >
-              <User className="mr-3 h-4 w-4" />
-              Edit Profile
+              <User className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              {!sidebarCollapsed && "Edit Profile"}
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start"
+              className={`w-full ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
               onClick={() => window.location.href = "/menu-management"}
+              title={sidebarCollapsed ? "Menu Management" : ""}
             >
-              <Menu className="mr-3 h-4 w-4" />
-              Menu Management
+              <Menu className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              {!sidebarCollapsed && "Menu Management"}
             </Button>
             
             <Button
               variant="ghost"
-              className="w-full justify-start"
+              className={`w-full ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
               onClick={() => setShowImpersonateModal(true)}
+              title={sidebarCollapsed ? "Impersonate" : ""}
             >
-              <Settings className="mr-3 h-4 w-4" />
-              Impersonate
+              <Settings className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              {!sidebarCollapsed && "Impersonate"}
             </Button>
           </div>
         </nav>

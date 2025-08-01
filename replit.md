@@ -17,6 +17,13 @@ Preferred communication style: Simple, everyday language.
 - **User Experience**: All users (manager, waiter, cashier) can now easily change their default passwords
 - **Validation**: Frontend and backend validation ensures passwords are at least 6 characters
 
+### Collapsible Sidebar Feature (January 2025)
+- **Manager Dashboard Enhancement**: Added collapsible sidebar with smooth animations
+- **Space Optimization**: Sidebar can shrink from 256px to 64px width for more screen space
+- **Interactive Toggle**: Floating toggle button with chevron icons for expand/collapse
+- **Smart Layout**: Icons remain visible in collapsed state with tooltips for accessibility
+- **Responsive Design**: Maintains full functionality in both expanded and collapsed states
+
 ## System Architecture
 
 ### Frontend Architecture
