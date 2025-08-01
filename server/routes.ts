@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Demo credentials for each role
       const demoCredentials = {
-        'manager': { username: 'manager', password: 'manager123' },
+        'manager': { username: 'zeus', password: '12345678' },
         'waiter': { username: 'waiter', password: 'waiter123' },
         'cashier': { username: 'cashier', password: 'cashier123' }
       };
