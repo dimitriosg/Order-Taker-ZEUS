@@ -22,7 +22,11 @@ function Router() {
   useEffect(() => {
     if (user?.role && isAuthenticated) {
       const expectedPath = `/${user.role}`;
-      if (location !== expectedPath) {
+      
+      // Allow managers to access menu-management page
+      const allowedPaths = user.role === 'manager' ? [expectedPath, '/menu-management'] : [expectedPath];
+      
+      if (!allowedPaths.includes(location)) {
         setLocation(expectedPath);
       }
     }
