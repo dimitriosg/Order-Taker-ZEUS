@@ -10,6 +10,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserTables(userId: string, assignedTables: number[]): Promise<User>;
+  updateUserProfile(userId: string, updateData: { name?: string; password?: string }): Promise<User>;
   getAllUsers(): Promise<User[]>;
 
   // Tables
@@ -58,6 +59,7 @@ export class MemStorage implements IStorage {
       password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
       role: "manager",
       assignedTables: null,
+      name: null,
     };
     
     const waiter: User = {
@@ -66,6 +68,7 @@ export class MemStorage implements IStorage {
       password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
       role: "waiter",
       assignedTables: [1, 2, 3],
+      name: null,
     };
     
     const cashier: User = {
@@ -74,6 +77,7 @@ export class MemStorage implements IStorage {
       password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
       role: "cashier",
       assignedTables: null,
+      name: null,
     };
 
     this.users.set(manager.id, manager);
@@ -147,7 +151,7 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id, assignedTables: null };
+    const user: User = { ...insertUser, id, assignedTables: null, name: null };
     this.users.set(id, user);
     return user;
   }
@@ -156,6 +160,15 @@ export class MemStorage implements IStorage {
     const user = this.users.get(userId);
     if (!user) throw new Error("User not found");
     user.assignedTables = assignedTables;
+    this.users.set(userId, user);
+    return user;
+  }
+
+  async updateUserProfile(userId: string, updateData: { name?: string; password?: string }): Promise<User> {
+    const user = this.users.get(userId);
+    if (!user) throw new Error("User not found");
+    if (updateData.name !== undefined) user.name = updateData.name;
+    if (updateData.password !== undefined) user.password = updateData.password;
     this.users.set(userId, user);
     return user;
   }
@@ -279,6 +292,15 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set({ assignedTables })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateUserProfile(userId: string, updateData: { name?: string; password?: string }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set(updateData)
       .where(eq(users.id, userId))
       .returning();
     return user;
@@ -457,4 +479,14 @@ const initializeDatabase = async () => {
   return dbStorage;
 };
 
-export const storage = await initializeDatabase();
+// Initialize database storage
+let storageInstance: DatabaseStorage | null = null;
+
+export const getStorage = async (): Promise<DatabaseStorage> => {
+  if (!storageInstance) {
+    storageInstance = await initializeDatabase();
+  }
+  return storageInstance;
+};
+
+export const storage = new DatabaseStorage();

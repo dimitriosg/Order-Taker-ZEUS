@@ -108,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const token = jwt.sign(
-        { id: user.id, role: user.role, assignedTables: user.assignedTables },
+        { id: user.id, username: user.username, role: user.role, assignedTables: user.assignedTables, name: user.name },
         process.env.JWT_SECRET || 'secret',
         { expiresIn: '24h' }
       );
@@ -119,7 +119,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: user.id, 
           username: user.username, 
           role: user.role, 
-          assignedTables: user.assignedTables 
+          assignedTables: user.assignedTables,
+          name: user.name
         } 
       });
     } catch (error) {
@@ -287,6 +288,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username, 
         role: user.role, 
         assignedTables: user.assignedTables 
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Profile management routes
+  app.put('/api/profile', auth(['waiter', 'cashier', 'manager']), async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { name, password } = req.body;
+      const updateData: { name?: string; password?: string } = {};
+      
+      if (name !== undefined) updateData.name = name;
+      if (password) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        updateData.password = hashedPassword;
+      }
+      
+      const user = await storage.updateUserProfile(req.user!.id, updateData);
+      
+      // Generate new token with updated user info
+      const token = jwt.sign(
+        { id: user.id, username: user.username, role: user.role, assignedTables: user.assignedTables, name: user.name },
+        process.env.JWT_SECRET || 'secret',
+        { expiresIn: '24h' }
+      );
+      
+      res.json({ 
+        token,
+        user: {
+          id: user.id, 
+          username: user.username, 
+          role: user.role, 
+          name: user.name,
+          assignedTables: user.assignedTables 
+        }
       });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });

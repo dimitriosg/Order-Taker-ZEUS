@@ -5,8 +5,9 @@ import { useSocket } from "@/contexts/SocketContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Utensils, Receipt, Menu, LogOut, Check, Clock, Plus } from "lucide-react";
+import { Utensils, Receipt, Menu, LogOut, Check, Clock, Plus, User } from "lucide-react";
 import { NewOrderModal } from "@/components/NewOrderModal";
+import { ProfileModal } from "@/components/ProfileModal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -38,6 +39,7 @@ export default function WaiterDashboard() {
   const { toast } = useToast();
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [activeView, setActiveView] = useState("tables");
 
   // Fetch tables
@@ -140,7 +142,12 @@ export default function WaiterDashboard() {
               <h1 className="text-xl font-semibold text-gray-900">Waiter Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{user?.username}</span>
+              <span className="text-sm text-gray-600">
+                {user?.name ? `${user.name} / @${user.username}` : `@${user?.username}`}
+              </span>
+              <Button variant="ghost" onClick={() => setShowProfileModal(true)} size="sm">
+                <User className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" onClick={logout} size="sm">
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -310,6 +317,10 @@ export default function WaiterDashboard() {
           }}
         />
       )}
+      <ProfileModal
+        open={showProfileModal}
+        onOpenChange={setShowProfileModal}
+      />
     </div>
   );
 }

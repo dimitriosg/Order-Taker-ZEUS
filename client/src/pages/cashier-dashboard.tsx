@@ -5,9 +5,10 @@ import { useSocket } from "@/contexts/SocketContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScanBarcode, Clock, Check, Receipt, LogOut, Bell } from "lucide-react";
+import { ScanBarcode, Clock, Check, Receipt, LogOut, Bell, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ProfileModal } from "@/components/ProfileModal";
 
 interface Order {
   id: string;
@@ -29,6 +30,7 @@ export default function CashierDashboard() {
   const socket = useSocket();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Fetch orders by status
   const { data: newOrders = [] } = useQuery<Order[]>({
@@ -97,7 +99,12 @@ export default function CashierDashboard() {
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm text-green-700">Live</span>
               </div>
-              <span className="text-sm text-gray-600">{user?.username}</span>
+              <span className="text-sm text-gray-600">
+                {user?.name ? `${user.name} / @${user.username}` : `@${user?.username}`}
+              </span>
+              <Button variant="ghost" onClick={() => setShowProfileModal(true)} size="sm">
+                <User className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" onClick={logout} size="sm">
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -323,6 +330,10 @@ export default function CashierDashboard() {
           </Card>
         </div>
       </div>
+      <ProfileModal
+        open={showProfileModal}
+        onOpenChange={setShowProfileModal}
+      />
     </div>
   );
 }

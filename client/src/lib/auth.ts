@@ -5,6 +5,7 @@ export interface AuthUser {
   username: string;
   role: "waiter" | "cashier" | "manager";
   assignedTables?: number[] | null;
+  name?: string | null;
 }
 
 export interface LoginResponse {
@@ -57,7 +58,8 @@ export const authService = {
         id: payload.id,
         username: payload.username || '',
         role: payload.role,
-        assignedTables: payload.assignedTables
+        assignedTables: payload.assignedTables,
+        name: payload.name || null
       };
     } catch {
       return null;

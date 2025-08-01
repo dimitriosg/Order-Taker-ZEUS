@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: roleEnum("role").notNull(),
   assignedTables: integer("assigned_tables").array(),
+  name: text("name"),
 });
 
 export const tables = pgTable("tables", {

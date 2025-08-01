@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2 } from "lucide-react";
+import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User } from "lucide-react";
 import { AddStaffModal } from "@/components/AddStaffModal";
+import { ProfileModal } from "@/components/ProfileModal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,6 +24,7 @@ export default function ManagerDashboard() {
   const { toast } = useToast();
   const [activeView, setActiveView] = useState("overview");
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [globalTables, setGlobalTables] = useState(false);
 
   // Fetch staff
@@ -78,7 +80,12 @@ export default function ManagerDashboard() {
               <h1 className="text-xl font-semibold text-gray-900">Manager Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{user?.username}</span>
+              <span className="text-sm text-gray-600">
+                {user?.name ? `${user.name} / @${user.username}` : `@${user?.username}`}
+              </span>
+              <Button variant="ghost" onClick={() => setShowProfileModal(true)} size="sm">
+                <User className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" onClick={logout} size="sm">
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -114,6 +121,14 @@ export default function ManagerDashboard() {
             >
               <Table className="mr-3 h-4 w-4" />
               Table Assignment
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => setShowProfileModal(true)}
+            >
+              <User className="mr-3 h-4 w-4" />
+              Edit Profile
             </Button>
           </div>
         </nav>
@@ -330,6 +345,10 @@ export default function ManagerDashboard() {
       {showAddStaffModal && (
         <AddStaffModal onClose={() => setShowAddStaffModal(false)} />
       )}
+      <ProfileModal
+        open={showProfileModal}
+        onOpenChange={setShowProfileModal}
+      />
     </div>
   );
 }
