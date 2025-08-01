@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 import { insertUserSchema, insertOrderSchema, insertOrderItemSchema, type User } from "@shared/schema";
 
 interface AuthenticatedRequest extends Request {
-  user: User;
+  user?: User;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -168,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await storage.createOrder({
         tableNumber,
         status: 'paid',
-        waiterId: req.user.id,
+        waiterId: req.user!.id,
         paid: true,
         cashReceived,
         cashierId: null,
@@ -226,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid status' });
       }
 
-      const order = await storage.updateOrderStatus(req.params.id, status, req.user.id);
+      const order = await storage.updateOrderStatus(req.params.id, status, req.user!.id);
       
       // If order is served, free the table
       if (status === 'served') {
