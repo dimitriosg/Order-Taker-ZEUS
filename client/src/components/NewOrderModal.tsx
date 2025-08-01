@@ -34,7 +34,7 @@ interface NewOrderModalProps {
 export function NewOrderModal({ tableNumber, onClose }: NewOrderModalProps) {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [cashReceived, setCashReceived] = useState<string>("");
-  const [activeCategory, setActiveCategory] = useState("Main Course");
+  const [activeCategory, setActiveCategory] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -73,6 +73,13 @@ export function NewOrderModal({ tableNumber, onClose }: NewOrderModalProps) {
   });
 
   const categories = categoriesFromAPI.length > 0 ? categoriesFromAPI : Array.from(new Set(menuItems.map(item => item.category)));
+
+  // Set the first category as active when categories are loaded
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0]);
+    }
+  }, [categories, activeCategory]);
 
   const addToOrder = (menuItem: MenuItem) => {
     const existingItem = orderItems.find(item => item.menuItemId === menuItem.id);
@@ -173,8 +180,8 @@ export function NewOrderModal({ tableNumber, onClose }: NewOrderModalProps) {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Menu Items</h3>
             
             <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                {categories.slice(0, 3).map((category) => (
+              <TabsList className={`grid w-full mb-6 ${categories.length <= 3 ? 'grid-cols-3' : categories.length === 4 ? 'grid-cols-4' : 'grid-cols-5'}`}>
+                {categories.map((category) => (
                   <TabsTrigger key={category} value={category} className="text-xs">
                     {category}
                   </TabsTrigger>
