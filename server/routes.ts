@@ -132,15 +132,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session?.userId || 'test-manager-1';
       const isImpersonating = req.session?.isImpersonating || false;
       
+      console.log('Auth session data:', { role, userId, isImpersonating, originalRole: req.session?.originalRole });
+      
       // If impersonating, try to get real user data from database
-      if (isImpersonating && userId !== 'test-manager-1') {
+      if (isImpersonating) {
         try {
           const realUser = await storage.getUser(userId);
           if (realUser) {
+            console.log('Found impersonated user:', realUser);
             res.json({
               ...realUser,
               isImpersonating: true,
-              originalRole: 'manager'
+              originalRole: req.session?.originalRole || 'manager'
             });
             return;
           }
