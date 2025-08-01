@@ -73,7 +73,11 @@ export default function CashierDashboard() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders/status"] });
+      // Invalidate all order status queries to refresh the dashboard
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/status/paid"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/status/in-prep"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/status/ready"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       toast({
         title: "Order status updated",
         description: "Order has been moved to the next stage",
@@ -91,10 +95,20 @@ export default function CashierDashboard() {
       });
     };
 
+    const handleOrderStatusUpdate = (data: any) => {
+      // Refresh all order status queries when any order status changes
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/status/paid"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/status/in-prep"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/status/ready"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+    };
+
     socket.on("newOrder", handleNewOrder);
+    socket.on("order_status_updated", handleOrderStatusUpdate);
 
     return () => {
       socket.off("newOrder", handleNewOrder);
+      socket.off("order_status_updated", handleOrderStatusUpdate);
     };
   }, [socket, queryClient, toast]);
 
