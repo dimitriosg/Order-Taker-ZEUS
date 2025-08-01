@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User, Download, TrendingUp, Clock, DollarSign, Settings } from "lucide-react";
+import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User, Download, TrendingUp, Clock, DollarSign, Settings, Receipt, Check } from "lucide-react";
 import { AddStaffModal } from "@/components/AddStaffModal";
 import { AddTableModal } from "@/components/AddTableModal";
 import { BatchTableModal } from "@/components/BatchTableModal";
@@ -356,7 +356,7 @@ export default function ManagerDashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <BarChart3 className="text-emerald-600 text-xl mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Manager Dashboard</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
