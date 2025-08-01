@@ -288,6 +288,14 @@ export default function WaiterDashboard() {
               <Receipt className="mr-3 h-4 w-4" />
               My Orders
             </Button>
+            <Button
+              variant={activeView === "status" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => setActiveView("status")}
+            >
+              <Clock className="mr-3 h-4 w-4" />
+              Order Status
+            </Button>
           </div>
         </nav>
 
@@ -492,6 +500,118 @@ export default function WaiterDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeView === "status" && (
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Order Status</h2>
+                <Button
+                  className="lg:hidden"
+                  onClick={() => setActiveView("tables")}
+                  variant="outline"
+                >
+                  View Tables
+                </Button>
+              </div>
+              
+              {/* Pending orders (not yet delivered) */}
+              {(() => {
+                const pendingOrders = (orders || []).filter(order => 
+                  order.status === "paid" || order.status === "in-prep" || order.status === "ready"
+                );
+                
+                return pendingOrders.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Orders</h3>
+                      <p className="text-gray-600">All orders have been delivered to tables</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Group orders by status */}
+                    {["paid", "in-prep", "ready"].map(status => {
+                      const statusOrders = pendingOrders.filter(order => order.status === status);
+                      if (statusOrders.length === 0) return null;
+                      
+                      const statusConfig = {
+                        paid: { title: "New Orders (Paid)", color: "blue", bgColor: "bg-blue-50" },
+                        "in-prep": { title: "In Preparation", color: "amber", bgColor: "bg-amber-50" },
+                        ready: { title: "Ready for Delivery", color: "green", bgColor: "bg-green-50" }
+                      };
+                      
+                      const config = statusConfig[status as keyof typeof statusConfig];
+                      
+                      return (
+                        <div key={status}>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <span className={`w-3 h-3 rounded-full mr-3 bg-${config.color}-500`}></span>
+                            {config.title} ({statusOrders.length})
+                          </h3>
+                          
+                          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {statusOrders.map((order) => (
+                              <Card key={order.id} className={`border-l-4 border-${config.color}-500 ${config.bgColor}`}>
+                                <CardContent className="p-4">
+                                  <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                      <h4 className="font-semibold text-gray-900">Table {order.tableNumber}</h4>
+                                      <p className="text-sm text-gray-600">
+                                        Order #{order.id.slice(-6)}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        {new Date(order.createdAt).toLocaleTimeString()}
+                                      </p>
+                                    </div>
+                                    <Badge variant={
+                                      order.status === "paid" ? "secondary" :
+                                      order.status === "in-prep" ? "default" :
+                                      "destructive"
+                                    }>
+                                      {order.status === "in-prep" ? "In Prep" :
+                                       order.status === "ready" ? "Ready" : "Paid"}
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="space-y-1 mb-3">
+                                    {(order.items || []).slice(0, 3).map((item, index) => (
+                                      <p key={index} className="text-sm text-gray-700">
+                                        {item.quantity}x Item #{item.menuItemId.slice(-6)}
+                                      </p>
+                                    ))}
+                                    {order.items && order.items.length > 3 && (
+                                      <p className="text-xs text-gray-500">
+                                        +{order.items.length - 3} more items
+                                      </p>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                                    <span className="text-sm font-medium">Cash: ${order.cashReceived}</span>
+                                    {order.status === "ready" && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => markServedMutation.mutate(order.id)}
+                                        disabled={markServedMutation.isPending}
+                                        className="bg-emerald-600 hover:bg-emerald-700"
+                                      >
+                                        {markServedMutation.isPending ? "Delivering..." : "Deliver"}
+                                      </Button>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </main>
