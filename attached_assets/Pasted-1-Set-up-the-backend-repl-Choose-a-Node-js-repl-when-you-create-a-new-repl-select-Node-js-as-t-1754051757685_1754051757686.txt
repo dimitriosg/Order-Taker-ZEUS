@@ -1,0 +1,61 @@
+1. Set up the backend repl
+Choose a Node.js repl – when you create a new repl, select “Node.js” as the template.
+
+Install dependencies – add the following packages to your package.json (either by editing the JSON directly or running npm install in the shell):
+
+lua
+Copy
+Edit
+express mongoose cors jsonwebtoken bcryptjs socket.io dotenv
+Place server.js in the root – upload or paste the server.js file (the one you downloaded earlier) into the repl.
+
+Create a .env file – Replit lets you store secrets via the Secrets tab. Define at least:
+
+MONGO_URI – the connection string to your MongoDB instance (local or Atlas).
+
+JWT_SECRET – a random string used to sign JWT tokens.
+You can either put these values in a .env file in the repl or set them in Replit’s Secrets environment so they aren’t committed to your code.
+
+Update package.json scripts – set the start script so Replit knows how to run your server:
+
+json
+Copy
+Edit
+{
+  "scripts": {
+    "start": "node server.js"
+  }
+}
+Open the port – Replit automatically exposes whatever port your Node app listens on (our example uses process.env.PORT or 5000). You don’t need to manually open it—just ensure you’re binding to process.env.PORT or 5000 as appropriate.
+
+2. Set up the frontend repl (React)
+Create a separate repl using the “React (Node)” template or the plain “Node.js” template and initialize a React app with npx create-react-app client.
+
+Install frontend dependencies – at minimum you’ll need:
+
+lua
+Copy
+Edit
+axios socket.io-client react-router-dom
+These handle HTTP requests, real‑time communication and routing.
+
+Configure API endpoints and WebSocket – in your React code, point all API calls to your backend repl’s URL. Replit assigns a unique domain to each repl (e.g. https://mybackend.yourusername.repl.co). For Socket.IO, connect to that domain too:
+
+js
+Copy
+Edit
+import { io } from 'socket.io-client';
+const socket = io('https://mybackend.yourusername.repl.co');
+Build out the dashboards – implement the waiter, cashier and manager interfaces as described earlier, calling the backend endpoints and listening to WebSocket events for real‑time updates.
+
+Run the frontend – set the start script to react-scripts start (this is the default with Create React App). Replit will expose the frontend on its own domain (e.g. https://myfrontend.yourusername.repl.co).
+
+3. Environment variables and secrets
+Replit doesn’t automatically read local .env files. Use the Secrets tab (lock icon in the left sidebar) to set MONGO_URI and JWT_SECRET; they’ll be injected into your Node.js process as environment variables. In the frontend you may need a .env file for things like REACT_APP_API_URL, but avoid storing private keys there.
+
+4. Optional improvements
+If you prefer a single repl, you can host the React app under a /client folder and proxy API requests to your Express server using a package like concurrently to run both processes. However, maintaining separate repls is usually simpler.
+
+Add a README.md to your repl repository explaining how to install dependencies, configure secrets and start both the server and client.
+
+With these pieces in place—dependencies, environment variables, start scripts and correct API URLs—Replit will be able to build and run your web app. You can then focus on fleshing out the React user interfaces and connecting them to the backend.

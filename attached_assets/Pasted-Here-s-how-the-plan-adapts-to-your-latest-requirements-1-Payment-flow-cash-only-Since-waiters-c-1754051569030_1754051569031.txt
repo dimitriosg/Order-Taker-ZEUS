@@ -1,0 +1,40 @@
+Here’s how the plan adapts to your latest requirements:
+
+1. Payment flow (cash only)
+Since waiters collect cash directly from the customer before the order is transmitted:
+
+Waiter interface changes: When a waiter builds an order, the app should display the total. The waiter marks it as “paid” once they have collected the cash. Only after payment confirmation does the order get created in the system and sent to the cashier/expeditor. This avoids digital payment processing and simplifies the workflow.
+
+Data model:
+
+Add a paid boolean field (or a paymentStatus enum) to the Order schema; set it to true once the waiter confirms cash collection.
+
+Optionally record the cashReceived amount and paidAt timestamp for auditing and reporting.
+
+Payment can be part of the order rather than a separate Payment document since there is only one method (cash).
+
+Cashier role: In this setup, the cashier’s screen will show only paid orders. There is no need to process payments; their job becomes tracking order status and making sure the kitchen and waiters stay informed.
+
+2. Table management and assignment
+You want flexibility in how tables are assigned:
+
+All tables available: Provide a mode where every waiter can see and take orders for any table. This might be useful in smaller venues or during off‑peak hours.
+
+Specific assignments: Provide an admin/manager setting to assign a list of tables to each waiter. In the database, include an assignedTables array on the waiter’s user record. When a waiter logs in, the system checks this field:
+
+If assignedTables is empty, the waiter can access all tables.
+
+If it contains table numbers, restrict the waiter’s view to those tables only.
+
+UI: In the manager dashboard, build a simple form to assign or change table assignments for each waiter. On the waiter dashboard, display either all tables or only their assigned tables based on this configuration.
+
+3. Updating the earlier architecture
+The previously outlined MERN architecture still stands, but with these adjustments:
+
+Order creation API: It should require a paid flag to be true. The endpoint could reject unpaid orders or mark them as pending until paid is true.
+
+Order status logic: The Order status flow becomes: paid (created by waiter) → in-prep (updated by cashier/expeditor) → ready (kitchen/expeditor) → served (when the waiter completes delivery).
+
+Manager configuration: Provide a setting (e.g., in a settings collection or an .env variable) to toggle between “unrestricted tables” and “assigned tables.” This setting controls whether the app filters table lists for each waiter.
+
+These modifications ensure the app reflects your workflow: cash is handled by waiters up front, the system records that payment, and order routing is based on whether tables are globally accessible or individually assigned.
