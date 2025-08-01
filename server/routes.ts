@@ -225,6 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/login', async (req: any, res) => {
     try {
       const { username, password, role } = req.body;
+      console.log('Login attempt:', { username, password: password ? '[HIDDEN]' : 'undefined' });
       
       // Demo credentials for each role
       const demoCredentials = {
@@ -240,6 +241,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (username && password) {
         // Username/password authentication
         for (const [checkRole, credentials] of Object.entries(demoCredentials)) {
+          console.log(`Checking ${checkRole}:`, { 
+            expected: credentials, 
+            received: { username, password: '[HIDDEN]' },
+            match: credentials.username === username && credentials.password === password
+          });
           if (credentials.username === username && credentials.password === password) {
             userRole = checkRole;
             userId = `test-${checkRole}-1`;
@@ -248,6 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         if (!userRole) {
+          console.log('Login failed - no matching credentials');
           return res.status(401).json({ message: "Invalid username or password" });
         }
       } else if (role) {
