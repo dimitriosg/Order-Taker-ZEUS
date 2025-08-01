@@ -803,6 +803,97 @@ export default function ManagerDashboard() {
                 </div>
               </div>
 
+              {/* Quick Stats Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <DollarSign className="text-green-600 text-lg" />
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                        <p className="text-xl font-bold text-gray-900">
+                          {currencySymbols[currency as keyof typeof currencySymbols]}
+                          {getTableMonitorData().reduce((sum, table) => sum + table.totalRevenue, 0).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Receipt className="text-blue-600 text-lg" />
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-gray-600">Total Orders</p>
+                        <p className="text-xl font-bold text-gray-900">
+                          {getTableMonitorData().reduce((sum, table) => sum + table.completedOrdersCount, 0)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Check className="text-green-600 text-lg" />
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-gray-600">Available Tables</p>
+                        <p className="text-xl font-bold text-gray-900">
+                          {getTableMonitorData().filter(table => table.status === "free").length}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-amber-100 rounded-lg">
+                        <Clock className="text-amber-600 text-lg" />
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-gray-600">Occupied Tables</p>
+                        <p className="text-xl font-bold text-gray-900">
+                          {getTableMonitorData().filter(table => table.status === "occupied").length}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <Clock className="text-purple-600 text-lg" />
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-gray-600">Avg Wait Time</p>
+                        <p className="text-xl font-bold text-gray-900">
+                          {(() => {
+                            const occupiedTables = getTableMonitorData().filter(table => table.status === "occupied" && table.waitingTime > 0);
+                            const avgWait = occupiedTables.length > 0 
+                              ? Math.round(occupiedTables.reduce((sum, table) => sum + table.waitingTime, 0) / occupiedTables.length)
+                              : 0;
+                            return `${avgWait}m`;
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Table Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                 {getTableMonitorData().map((table) => (
                   <Card key={table.id} className={`border-l-4 ${
