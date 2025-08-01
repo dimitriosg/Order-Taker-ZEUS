@@ -11,6 +11,8 @@ import { AddTableModal } from "@/components/AddTableModal";
 import { BatchTableModal } from "@/components/BatchTableModal";
 import { BatchAssignModal } from "@/components/BatchAssignModal";
 import { ProfileModal } from "@/components/ProfileModal";
+import { ImpersonateModal } from "@/components/ImpersonateModal";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { EditUserModal } from "@/components/EditUserModal";
 import { DeleteUserModal } from "@/components/DeleteUserModal";
@@ -79,6 +81,7 @@ export default function ManagerDashboard() {
   const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Staff | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showImpersonateModal, setShowImpersonateModal] = useState(false);
   const [currency, setCurrency] = useState("EUR");
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(10000); // 10 seconds default
@@ -335,6 +338,8 @@ export default function ManagerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ImpersonationBanner user={user} />
+      
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -414,6 +419,14 @@ export default function ManagerDashboard() {
             >
               <User className="mr-3 h-4 w-4" />
               Edit Profile
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => setShowImpersonateModal(true)}
+            >
+              <Settings className="mr-3 h-4 w-4" />
+              Impersonate
             </Button>
           </div>
         </nav>
@@ -1286,7 +1299,11 @@ export default function ManagerDashboard() {
         user={selectedUser}
       />
 
-
+      {showImpersonateModal && (
+        <ImpersonateModal
+          onClose={() => setShowImpersonateModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -51,6 +51,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+  // Impersonation routes
+  app.post('/api/impersonate', async (req: any, res) => {
+    try {
+      const { userId } = req.body;
+      
+      // Only managers can impersonate
+      const currentRole = req.session?.userRole || 'manager';
+      if (currentRole !== 'manager' && !req.session?.originalRole) {
+        return res.status(403).json({ message: 'Only managers can impersonate users' });
+      }
+
+      // Get the user to impersonate
+      const userToImpersonate = await storage.getUser(userId);
+      if (!userToImpersonate) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Store original role if not already impersonating
+      if (!req.session?.originalRole) {
+        req.session.originalRole = currentRole;
+        req.session.originalUserId = req.session?.userId || 'test-manager-1';
+      }
+
+      // Set impersonation session data
+      req.session.userRole = userToImpersonate.role;
+      req.session.userId = userToImpersonate.id;
+      req.session.isImpersonating = true;
+
+      res.json({ message: 'Impersonation started', user: userToImpersonate });
+    } catch (error) {
+      console.error("Error starting impersonation:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/stop-impersonation', async (req: any, res) => {
+    try {
+      if (!req.session?.isImpersonating) {
+        return res.status(400).json({ message: 'Not currently impersonating' });
+      }
+
+      // Restore original role and user
+      req.session.userRole = req.session.originalRole;
+      req.session.userId = req.session.originalUserId;
+      
+      // Clear impersonation data
+      delete req.session.originalRole;
+      delete req.session.originalUserId;
+      delete req.session.isImpersonating;
+
+      res.json({ message: 'Impersonation stopped' });
+    } catch (error) {
+      console.error("Error stopping impersonation:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Auth routes - demo mock for testing
   app.get('/api/auth/user', async (req: any, res) => {
     try {
@@ -62,6 +119,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // For demo, create user based on role in session or default to manager
       const role = req.session?.userRole || 'manager';
+      const userId = req.session?.userId || 'test-manager-1';
+      const isImpersonating = req.session?.isImpersonating || false;
+      
+      // If impersonating, try to get real user data from database
+      if (isImpersonating && userId !== 'test-manager-1') {
+        try {
+          const realUser = await storage.getUser(userId);
+          if (realUser) {
+            res.json({
+              ...realUser,
+              isImpersonating: true,
+              originalRole: 'manager'
+            });
+            return;
+          }
+        } catch (error) {
+          console.error("Error fetching impersonated user:", error);
+        }
+      }
+      
       const mockUsers = {
         manager: {
           id: 'test-manager-1',
@@ -95,7 +172,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
       
-      res.json(mockUsers[role as keyof typeof mockUsers] || mockUsers.manager);
+      const userData = mockUsers[role as keyof typeof mockUsers] || mockUsers.manager;
+      res.json({
+        ...userData,
+        isImpersonating,
+        originalRole: isImpersonating ? 'manager' : undefined
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });

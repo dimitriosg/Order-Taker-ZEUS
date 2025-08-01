@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Utensils, Receipt, Menu, LogOut, Check, Clock, Plus, User, Edit } from "lucide-react";
 import { NewOrderModal } from "@/components/NewOrderModal";
 import { ProfileModal } from "@/components/ProfileModal";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -242,6 +243,8 @@ export default function WaiterDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ImpersonationBanner user={user} />
+      
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="px-4 sm:px-6 lg:px-8">
