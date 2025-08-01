@@ -42,6 +42,7 @@ export default function ManagerDashboard() {
   const [globalTables, setGlobalTables] = useState(false);
   const [currency, setCurrency] = useState("EUR");
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+  const [refreshInterval, setRefreshInterval] = useState(5000); // 5 seconds
 
   // Fetch staff
   const { data: staff = [], isLoading: staffLoading } = useQuery<Staff[]>({
@@ -51,6 +52,12 @@ export default function ManagerDashboard() {
   // Fetch tables
   const { data: tables = [], isLoading: tablesLoading } = useQuery<TableData[]>({
     queryKey: ["/api/tables"],
+  });
+
+  // Fetch orders for monitoring
+  const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
+    queryKey: ["/api/orders"],
+    refetchInterval: activeView === "monitor" ? refreshInterval : false,
   });
 
   // Update table assignments mutation
@@ -171,6 +178,32 @@ export default function ManagerDashboard() {
     }
   };
 
+  // Calculate table monitoring data
+  const getTableMonitorData = () => {
+    return tables.map(table => {
+      const tableOrders = orders.filter(order => order.tableNumber === table.number);
+      const activeOrder = tableOrders.find(order => order.status !== "served");
+      const completedOrders = tableOrders.filter(order => order.status === "served");
+      const totalRevenue = completedOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      
+      let waitingTime = 0;
+      if (activeOrder) {
+        const orderTime = new Date(activeOrder.createdAt || new Date());
+        waitingTime = Math.floor((Date.now() - orderTime.getTime()) / (1000 * 60)); // minutes
+      }
+
+      return {
+        ...table,
+        activeOrder,
+        totalRevenue,
+        completedOrdersCount: completedOrders.length,
+        waitingTime,
+        status: activeOrder ? 
+          (activeOrder.status === "ready" ? "ready" : "occupied") : "free"
+      };
+    });
+  };
+
   if (staffLoading || tablesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -223,6 +256,14 @@ export default function ManagerDashboard() {
             >
               <Download className="mr-3 h-4 w-4" />
               Reports
+            </Button>
+            <Button
+              variant={activeView === "monitor" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => setActiveView("monitor")}
+            >
+              <Clock className="mr-3 h-4 w-4" />
+              Table Monitor
             </Button>
             <Button
               variant={activeView === "staff" ? "default" : "ghost"}
@@ -557,6 +598,210 @@ export default function ManagerDashboard() {
                 </div>
               </Card>
               
+            </div>
+          )}
+
+          {activeView === "monitor" && (
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Real-Time Table Monitor</h2>
+                  <p className="text-sm text-gray-600 mt-1">Live monitoring of table status, orders, and revenue</p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-gray-600">Live Updates</span>
+                  </div>
+                  <select 
+                    value={refreshInterval} 
+                    onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                  >
+                    <option value={2000}>2s refresh</option>
+                    <option value={5000}>5s refresh</option>
+                    <option value={10000}>10s refresh</option>
+                    <option value={30000}>30s refresh</option>
+                  </select>
+                  <Button
+                    variant="outline"
+                    onClick={() => downloadCSV(
+                      getTableMonitorData().map(table => ({
+                        'Table Number': table.number,
+                        Status: table.status,
+                        'Active Order': table.activeOrder ? `Order #${table.activeOrder.id.slice(-6)}` : 'None',
+                        'Order Status': table.activeOrder?.status || 'No Order',
+                        'Waiting Time (min)': table.waitingTime,
+                        'Today Revenue': `${currencySymbols[currency as keyof typeof currencySymbols]}${table.totalRevenue}`,
+                        'Completed Orders': table.completedOrdersCount,
+                        'Last Updated': new Date().toLocaleTimeString()
+                      })), 
+                      'table_monitor_snapshot'
+                    )}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export Snapshot
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                {getTableMonitorData().map((table) => (
+                  <Card key={table.id} className={`border-l-4 ${
+                    table.status === "ready" ? "border-l-red-500 bg-red-50" :
+                    table.status === "occupied" ? "border-l-amber-500 bg-amber-50" :
+                    "border-l-green-500 bg-green-50"
+                  }`}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900">Table {table.number}</h3>
+                          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            table.status === "ready" ? "bg-red-100 text-red-800" :
+                            table.status === "occupied" ? "bg-amber-100 text-amber-800" :
+                            "bg-green-100 text-green-800"
+                          }`}>
+                            {table.status === "ready" ? "🔔 Order Ready" :
+                             table.status === "occupied" ? "👥 Occupied" :
+                             "✅ Available"}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-gray-900">
+                            {currencySymbols[currency as keyof typeof currencySymbols]}{table.totalRevenue}
+                          </div>
+                          <div className="text-xs text-gray-500">Today's Revenue</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {table.activeOrder ? (
+                          <>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Current Order:</span>
+                              <span className="text-sm font-medium">#{table.activeOrder.id.slice(-6)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Status:</span>
+                              <span className={`text-sm font-medium ${
+                                table.activeOrder.status === "ready" ? "text-red-600" :
+                                table.activeOrder.status === "in-prep" ? "text-amber-600" :
+                                "text-blue-600"
+                              }`}>
+                                {table.activeOrder.status === "paid" ? "Preparing" :
+                                 table.activeOrder.status === "in-prep" ? "In Kitchen" :
+                                 table.activeOrder.status === "ready" ? "Ready to Serve" :
+                                 table.activeOrder.status}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Waiting:</span>
+                              <span className={`text-sm font-medium ${
+                                table.waitingTime > 30 ? "text-red-600" :
+                                table.waitingTime > 15 ? "text-amber-600" :
+                                "text-green-600"
+                              }`}>
+                                {table.waitingTime} min
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Order Total:</span>
+                              <span className="text-sm font-medium">
+                                {currencySymbols[currency as keyof typeof currencySymbols]}{table.activeOrder.totalAmount || 0}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-4">
+                            <div className="text-sm text-gray-500">No active order</div>
+                            <div className="text-xs text-gray-400 mt-1">Table is available</div>
+                          </div>
+                        )}
+                        
+                        <div className="border-t pt-2 mt-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500">Orders Today:</span>
+                            <span className="text-xs font-medium">{table.completedOrdersCount}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Summary Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 bg-green-100 rounded-lg">
+                        <DollarSign className="text-green-600 text-xl" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {currencySymbols[currency as keyof typeof currencySymbols]}
+                          {getTableMonitorData().reduce((sum, table) => sum + table.totalRevenue, 0)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 bg-amber-100 rounded-lg">
+                        <Clock className="text-amber-600 text-xl" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Avg Wait Time</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {Math.round(
+                            getTableMonitorData()
+                              .filter(t => t.activeOrder)
+                              .reduce((sum, table) => sum + table.waitingTime, 0) /
+                            Math.max(getTableMonitorData().filter(t => t.activeOrder).length, 1)
+                          )} min
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 bg-blue-100 rounded-lg">
+                        <Table className="text-blue-600 text-xl" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Active Orders</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {getTableMonitorData().filter(t => t.activeOrder).length}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 bg-red-100 rounded-lg">
+                        <TrendingUp className="text-red-600 text-xl" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Ready to Serve</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {getTableMonitorData().filter(t => t.status === "ready").length}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
 
