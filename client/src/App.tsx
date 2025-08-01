@@ -7,7 +7,7 @@ import { SocketProvider } from "@/contexts/SocketContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 
-import { Landing } from "@/pages/landing";
+import Login from "@/pages/login";
 import WaiterDashboard from "@/pages/waiter-dashboard";
 import CashierDashboard from "@/pages/cashier-dashboard";
 import ManagerDashboard from "@/pages/manager-dashboard";
@@ -40,11 +40,11 @@ function Router() {
     );
   }
 
-  // If user is not authenticated or there's an error, show landing page
+  // If user is not authenticated or there's an error, show login page
   if (!isAuthenticated || error) {
     return (
       <Switch>
-        <Route path="/" component={Landing} />
+        <Route path="/" component={Login} />
         <Route><Redirect to="/" /></Route>
       </Switch>
     );
