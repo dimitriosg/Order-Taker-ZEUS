@@ -49,14 +49,16 @@ export default function CashierDashboard() {
   
   const logout = async () => {
     try {
-      await apiRequest("POST", "/api/logout");
-      // Clear all cached data
-      queryClient.clear();
-      // Clear any localStorage data
-      localStorage.removeItem('mockUserRole');
-      localStorage.removeItem('auth_token');
-      // Force page reload to reset all state
-      window.location.href = "/";
+      const response = await apiRequest("POST", "/api/logout", {});
+      if (response.ok) {
+        // Clear all cached data
+        queryClient.clear();
+        // Clear any localStorage data
+        localStorage.removeItem('mockUserRole');
+        localStorage.removeItem('auth_token');
+        // Force page reload to reset all state
+        window.location.href = "/";
+      }
     } catch (error) {
       console.error("Logout error:", error);
       toast({

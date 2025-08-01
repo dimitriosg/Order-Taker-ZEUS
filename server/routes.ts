@@ -121,9 +121,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes - demo mock for testing
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      // Check if user is "logged out" via logout endpoint
-      const isLoggedOut = req.query.logout === 'true';
-      if (isLoggedOut) {
+      // Check if user is logged out
+      if (!req.session || req.session.loggedOut) {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
@@ -200,19 +199,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Logout route
   app.post('/api/logout', async (req: any, res) => {
     try {
-      // Clear any session data if using sessions
+      // Mark session as logged out
       if (req.session) {
-        req.session.destroy((err: any) => {
-          if (err) {
-            console.error('Session destroy error:', err);
-          }
-        });
+        req.session.loggedOut = true;
+        req.session.userRole = null;
+        req.session.userId = null;
+        req.session.isImpersonating = false;
+        req.session.originalRole = null;
+        req.session.originalUserId = null;
       }
-      
-      // Clear cookies
-      res.clearCookie('connect.sid');
-      res.clearCookie('session');
-      res.clearCookie('replit_auth');
       
       // Return success response instead of redirect
       res.json({ success: true, message: "Logged out successfully" });
@@ -230,9 +225,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid role" });
       }
       
-      // Store role in session for demo
+      // Store role in session for demo and clear logout flag
       if (!req.session) req.session = {};
       req.session.userRole = role;
+      req.session.loggedOut = false;
       
       res.json({ success: true, role });
     } catch (error) {
