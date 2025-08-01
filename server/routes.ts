@@ -66,6 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             clientsByRole.set(data.role, new Set());
           }
           clientsByRole.get(data.role)!.add(ws);
+          console.log(`${data.role} client connected. Total ${data.role} clients: ${clientsByRole.get(data.role)!.size}`);
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
@@ -73,8 +74,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     ws.on('close', () => {
-      // Remove from all role sets
-      clientsByRole.forEach(clients => clients.delete(ws));
+      // Remove from all role sets and log disconnections
+      clientsByRole.forEach((clients, role) => {
+        if (clients.delete(ws)) {
+          console.log(`${role} client disconnected. Remaining ${role} clients: ${clients.size}`);
+        }
+      });
     });
   });
 
@@ -823,6 +828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       console.log('Broadcasting order status update:', message);
+      console.log('Order status changed from', previousStatus, 'to', status);
       broadcastToRole('waiter', message);
       broadcastToRole('cashier', message);
       broadcastToRole('manager', message);
