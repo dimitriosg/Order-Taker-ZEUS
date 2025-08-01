@@ -122,14 +122,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes - demo mock for testing
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      // Check if user is logged out
-      if (!req.session || req.session.loggedOut) {
+      // Check if user is logged out or no session exists
+      if (!req.session || req.session.loggedOut || !req.session.userRole) {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      // For demo, create user based on role in session or default to manager
-      const role = req.session?.userRole || 'manager';
-      const userId = req.session?.userId || 'test-manager-1';
+      // Get user data from session - no defaults
+      const role = req.session.userRole;
+      const userId = req.session.userId;
       const isImpersonating = req.session?.isImpersonating || false;
       
       console.log('Auth session data:', { role, userId, isImpersonating, originalRole: req.session?.originalRole });
@@ -200,18 +200,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Logout route
   app.post('/api/logout', async (req: any, res) => {
     try {
-      // Mark session as logged out
+      // Destroy the session completely
       if (req.session) {
-        req.session.loggedOut = true;
-        req.session.userRole = null;
-        req.session.userId = null;
-        req.session.isImpersonating = false;
-        req.session.originalRole = null;
-        req.session.originalUserId = null;
+        req.session.destroy((err: any) => {
+          if (err) {
+            console.error("Session destruction error:", err);
+            return res.status(500).json({ message: "Logout failed" });
+          }
+          
+          // Clear the session cookie
+          res.clearCookie('connect.sid');
+          res.json({ success: true, message: "Logged out successfully" });
+        });
+      } else {
+        res.json({ success: true, message: "Logged out successfully" });
       }
-      
-      // Return success response instead of redirect
-      res.json({ success: true, message: "Logged out successfully" });
     } catch (error) {
       console.error("Logout error:", error);
       res.status(500).json({ message: "Logout failed" });
