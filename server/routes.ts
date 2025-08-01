@@ -2,7 +2,7 @@ import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertOrderSchema, insertOrderItemSchema, insertTableSchema } from "@shared/schema";
+import { insertOrderSchema, insertOrderItemSchema, insertTableSchema, insertMenuItemSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {

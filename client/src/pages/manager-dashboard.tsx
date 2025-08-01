@@ -274,13 +274,23 @@ export default function ManagerDashboard() {
     });
   };
 
-  // Mock data for demonstration - in real app this would come from API
+  // Calculate real stats from orders data
   const todayStats = {
-    revenue: 0,
-    ordersCompleted: 0,
+    revenue: orders.reduce((total, order) => 
+      total + (order.items || []).reduce((orderTotal, item) => 
+        orderTotal + ((item.menuItem?.price || 0) * item.quantity), 0
+      ), 0
+    ),
+    ordersCompleted: orders.filter(order => order.status === "served").length,
     activeTables: tables.filter(t => t.status === "occupied").length,
     activeStaff: staff.length,
-    avgOrderTime: 0,
+    avgOrderTime: orders.length > 0 ? Math.round(
+      orders.reduce((total, order) => {
+        const orderTime = new Date(order.createdAt || new Date());
+        const timeDiff = Date.now() - orderTime.getTime();
+        return total + (timeDiff / (1000 * 60)); // minutes
+      }, 0) / orders.length
+    ) : 0,
     peakHour: "12:00 PM"
   };
 

@@ -90,6 +90,8 @@ export const insertTableSchema = createInsertSchema(tables).omit({
 
 export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
   id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
