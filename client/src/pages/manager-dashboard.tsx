@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,11 @@ interface TableData {
 }
 
 export default function ManagerDashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  
+  const logout = () => {
+    window.location.href = "/api/logout";
+  };
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [activeView, setActiveView] = useState("overview");

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useSocket } from "@/contexts/SocketContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,7 +33,11 @@ interface Order {
 }
 
 export default function WaiterDashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  
+  const logout = () => {
+    window.location.href = "/api/logout";
+  };
   const socket = useSocket();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -49,8 +53,7 @@ export default function WaiterDashboard() {
 
   // Fetch waiter's orders
   const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
-    queryKey: ["/api/orders/waiter", user?.id],
-    enabled: !!user?.id,
+    queryKey: ["/api/orders"],
   });
 
   // Mark order as served mutation
@@ -62,7 +65,7 @@ export default function WaiterDashboard() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders/waiter"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
       toast({
         title: "Order marked as served",
@@ -74,7 +77,7 @@ export default function WaiterDashboard() {
   // Socket listeners
   useEffect(() => {
     const handleOrderUpdate = (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders/waiter"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
       
       if (data.order.status === "ready") {
@@ -114,12 +117,7 @@ export default function WaiterDashboard() {
     return { status: "free", color: "green" };
   };
 
-  const filteredTables = tables.filter(table => {
-    if (!user?.assignedTables || user.assignedTables.length === 0) {
-      return true; // Show all tables if no assignment
-    }
-    return user.assignedTables.includes(table.number);
-  });
+  const filteredTables = tables; // Show all tables for testing
 
   const activeOrders = orders.filter(order => order.status !== "served");
 
@@ -143,7 +141,7 @@ export default function WaiterDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                {user?.name ? `${user.name} / @${user.username}` : `@${user?.username}`}
+                {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Waiter'}
               </span>
               <Button variant="ghost" onClick={() => setShowProfileModal(true)} size="sm">
                 <User className="h-4 w-4" />

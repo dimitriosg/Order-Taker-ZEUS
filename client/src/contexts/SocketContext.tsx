@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, ReactNode } from "react";
 import { socketService } from "@/lib/socket";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SocketContextType {
   socket: typeof socketService;
@@ -12,7 +12,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
+    if (user?.role) {
       socketService.connect(user.role);
     }
 

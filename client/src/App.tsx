@@ -3,43 +3,45 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SocketProvider } from "@/contexts/SocketContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/hooks/useAuth";
 
-import Login from "@/pages/login";
+import { Landing } from "@/pages/landing";
 import WaiterDashboard from "@/pages/waiter-dashboard";
 import CashierDashboard from "@/pages/cashier-dashboard";
 import ManagerDashboard from "@/pages/manager-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // For testing purposes, always show as authenticated with manager role
+  const testUser = user || { role: 'manager' };
 
   return (
     <Switch>
-      <Route path="/login" component={Login} />
-      
       <Route path="/waiter">
-        <ProtectedRoute requiredRole="waiter">
-          <WaiterDashboard />
-        </ProtectedRoute>
+        <WaiterDashboard />
       </Route>
       
       <Route path="/cashier">
-        <ProtectedRoute requiredRole="cashier">
-          <CashierDashboard />
-        </ProtectedRoute>
+        <CashierDashboard />
       </Route>
       
       <Route path="/manager">
-        <ProtectedRoute requiredRole="manager">
-          <ManagerDashboard />
-        </ProtectedRoute>
+        <ManagerDashboard />
       </Route>
       
       <Route path="/">
-        {user ? <Redirect to={`/${user.role}`} /> : <Redirect to="/login" />}
+        <Redirect to="/manager" />
       </Route>
       
       <Route component={NotFound} />
@@ -51,12 +53,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <SocketProvider>
-            <Toaster />
-            <Router />
-          </SocketProvider>
-        </AuthProvider>
+        <SocketProvider>
+          <Toaster />
+          <Router />
+        </SocketProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

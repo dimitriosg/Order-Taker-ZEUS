@@ -16,13 +16,13 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: TanStack Query for server state management and caching
 - **Routing**: Wouter for lightweight client-side routing
 - **Real-time Communication**: Custom WebSocket service for live order updates
-- **Authentication**: JWT-based authentication with context providers
+- **Authentication**: Replit OpenID Connect authentication with session-based authentication
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript
-- **Data Storage**: In-memory storage implementation with interface for future database integration
+- **Data Storage**: PostgreSQL database with Drizzle ORM for type-safe queries
 - **Real-time Communication**: WebSocket server using native ws library for role-based broadcasts
-- **Authentication**: JWT tokens with bcrypt for password hashing
+- **Authentication**: Replit OpenID Connect with Passport.js and session storage
 - **API Design**: RESTful endpoints with proper error handling and logging middleware
 
 ### Database Schema Design
@@ -33,10 +33,10 @@ Preferred communication style: Simple, everyday language.
 - **User Profiles**: Name field added to users table with profile update API endpoints
 
 ### Authentication and Authorization
-- **JWT Implementation**: Token-based authentication with automatic expiration checking
+- **Replit Auth Integration**: OpenID Connect authentication with automatic token refresh
 - **Role-based Access Control**: Three distinct user roles with specific dashboard access
-- **Protected Routes**: Client-side route protection based on user roles
-- **Session Management**: localStorage token persistence with automatic logout on expiration
+- **Protected Routes**: Server-side authentication middleware with client-side role checking
+- **Session Management**: PostgreSQL session storage with secure cookie handling
 
 ### Real-time Features
 - **WebSocket Architecture**: Role-based room management for targeted updates

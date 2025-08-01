@@ -1,20 +1,36 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, real, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, timestamp, real, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { index } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["waiter", "cashier", "manager"]);
 export const orderStatusEnum = pgEnum("order_status", ["paid", "in-prep", "ready", "served"]);
 export const tableStatusEnum = pgEnum("table_status", ["free", "occupied"]);
 
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Updated users table for Replit Auth
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  role: roleEnum("role").notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  role: roleEnum("role").notNull().default("waiter"),
   assignedTables: integer("assigned_tables").array(),
-  name: text("name"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const tables = pgTable("tables", {
@@ -54,6 +70,14 @@ export const orderItems = pgTable("order_items", {
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   assignedTables: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const upsertUserSchema = createInsertSchema(users).omit({
+  assignedTables: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertTableSchema = createInsertSchema(tables).omit({
@@ -110,6 +134,7 @@ export const menuItemsRelations = relations(menuItems, ({ many }) => ({
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type Table = typeof tables.$inferSelect;
 export type InsertTable = z.infer<typeof insertTableSchema>;
 export type MenuItem = typeof menuItems.$inferSelect;

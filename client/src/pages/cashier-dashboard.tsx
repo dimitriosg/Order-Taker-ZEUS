@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useSocket } from "@/contexts/SocketContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +26,11 @@ interface Order {
 }
 
 export default function CashierDashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  
+  const logout = () => {
+    window.location.href = "/api/logout";
+  };
   const socket = useSocket();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -100,7 +104,7 @@ export default function CashierDashboard() {
                 <span className="text-sm text-green-700">Live</span>
               </div>
               <span className="text-sm text-gray-600">
-                {user?.name ? `${user.name} / @${user.username}` : `@${user?.username}`}
+                {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email || 'Cashier'}
               </span>
               <Button variant="ghost" onClick={() => setShowProfileModal(true)} size="sm">
                 <User className="h-4 w-4" />
