@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Real-time WebSocket System Fix (January 2025)
+- **Event Synchronization**: Fixed critical WebSocket event name mismatch causing new orders to not appear automatically
+- **Server Broadcasting**: Changed server broadcasts from 'new_order' to 'newOrder' to match client expectations
+- **Enhanced Debugging**: Added comprehensive WebSocket connection and message logging for troubleshooting
+- **Authentication Integration**: Re-enabled authentication system with proper session handling
+- **Instant Updates**: Orders now appear immediately in cashier dashboard when waiters create them
+- **Cross-role Communication**: Real-time status updates working correctly between all user roles
+
 ### Profile Picture Upload Feature (January 2025)
 - **Complete Upload System**: Implemented profile picture upload with preview functionality using multer backend
 - **Image Validation**: Added file type and 5MB size limit validation with proper error handling
