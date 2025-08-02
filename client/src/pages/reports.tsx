@@ -160,7 +160,7 @@ export default function Reports() {
     if (!salesData) return;
     const headers = ['Date', 'Order ID', 'Table ID', 'Items', 'Total', 'Waiter'];
     const exportData = salesData
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .sort((a, b) => a.orderId.localeCompare(b.orderId))
       .map(item => ({
         date: formatDate(item.date),
         orderid: item.orderId,
@@ -209,7 +209,7 @@ export default function Reports() {
     // Prepare all report data with sorting
     const salesHeaders = ['Date', 'Order ID', 'Table ID', 'Items', 'Total', 'Waiter'];
     const salesExportData = salesData
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .sort((a, b) => a.orderId.localeCompare(b.orderId))
       .map(item => ({
         date: formatDate(item.date),
         orderid: item.orderId,
@@ -444,7 +444,7 @@ export default function Reports() {
                       </TableHeader>
                       <TableBody>
                         {salesData
-                          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                          .sort((a, b) => a.orderId.localeCompare(b.orderId))
                           .map((sale) => (
                           <TableRow key={sale.orderId}>
                             <TableCell>{formatDate(sale.date)}</TableCell>
