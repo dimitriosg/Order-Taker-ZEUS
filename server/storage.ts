@@ -446,6 +446,8 @@ export class DatabaseStorage implements IStorage {
     const endOfPeriod = new Date(end + 'T23:59:59.999Z');
 
     // Get all orders for the specified date with their items and waiter info
+    console.log('Sales Report Query - Date Range:', { startOfPeriod, endOfPeriod });
+    
     const ordersData = await db
       .select({
         orderId: orders.id,
@@ -459,9 +461,11 @@ export class DatabaseStorage implements IStorage {
       .from(orders)
       .leftJoin(users, eq(orders.waiterId, users.id))
       .where(and(
-        gte(orders.createdAt, startOfDay),
-        lt(orders.createdAt, endOfDay)
+        gte(orders.createdAt, startOfPeriod),
+        lt(orders.createdAt, endOfPeriod)
       ));
+      
+    console.log('Orders found:', ordersData.length);
 
     const salesReport = [];
 
@@ -583,8 +587,8 @@ export class DatabaseStorage implements IStorage {
       .from(orders)
       .leftJoin(users, eq(orders.waiterId, users.id))
       .where(and(
-        gte(orders.createdAt, startOfDay),
-        lt(orders.createdAt, endOfDay)
+        gte(orders.createdAt, startOfPeriod),
+        lt(orders.createdAt, endOfPeriod)
       ));
 
     const staffPerformance = new Map<string, { username: string; totalSales: number }>();
