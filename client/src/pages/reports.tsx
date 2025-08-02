@@ -101,14 +101,8 @@ export default function Reports() {
   const formatItemsList = (items: any[]) => {
     if (!Array.isArray(items) || items.length === 0) return 'No items';
     
-    // Debug logging to see what we're receiving
-    console.log('formatItemsList received:', items);
-    
     return items.map(item => {
       if (typeof item === 'object' && item !== null) {
-        // Log each item to understand the structure
-        console.log('Processing item:', item);
-        
         // Handle different possible object structures based on backend data
         const name = item.name || item.itemName || item.menuItemName || 'Unknown Item';
         const quantity = item.quantity || item.qty || 1;
@@ -138,10 +132,10 @@ export default function Reports() {
     const csvContent = [
       headers.join(','),
       ...data.map(row => headers.map(header => {
-        if (header === 'items' && Array.isArray(row.items)) {
+        if (header === 'Items' && Array.isArray(row.items)) {
           return `"${formatItemsList(row.items)}"`;
         }
-        const value = row[header.toLowerCase().replace(' ', '')] || '';
+        const value = row[header.toLowerCase().replace(' ', '').replace('&', '')] || '';
         // Remove Euro symbols and clean encoding issues
         let cleanValue = typeof value === 'string' ? value.replace(/€/g, '').replace(/â‚¬/g, '') : value;
         return `"${cleanValue}"`;
@@ -168,7 +162,7 @@ export default function Reports() {
       date: formatDate(item.date),
       orderid: item.orderId,
       tableid: item.tableId,
-      items: item.items,
+      items: formatItemsList(item.items), // Format items properly for CSV
       total: item.total.toFixed(2),
       waiter: item.waiterName
     }));
