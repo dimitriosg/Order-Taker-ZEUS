@@ -66,6 +66,21 @@ export interface IStorage {
   createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
   getOrderItemsByOrderId(orderId: string): Promise<OrderItem[]>;
   deleteOrderItemsByMenuItemId(menuItemId: string): Promise<void>;
+
+  // Reports
+  getSalesReport(date?: string): Promise<Array<{
+    date: string;
+    orderId: string;
+    tableId: number;
+    items: Array<{ name: string; quantity: number }>;
+    total: number;
+    waiterName: string;
+  }>>;
+  getStaffPerformanceReport(date?: string): Promise<Array<{
+    username: string;
+    totalSales: number;
+    date: string;
+  }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -213,12 +228,6 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(menuItems)
       .where(eq(menuItems.id, id));
-  }
-
-  async deleteOrderItemsByMenuItemId(menuItemId: string): Promise<void> {
-    await db
-      .delete(orderItems)
-      .where(eq(orderItems.menuItemId, menuItemId));
   }
 
   // Categories
@@ -409,6 +418,156 @@ export class DatabaseStorage implements IStorage {
 
   async getOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
     return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  }
+
+  async deleteOrderItemsByMenuItemId(menuItemId: string): Promise<void> {
+    await db.delete(orderItems).where(eq(orderItems.menuItemId, menuItemId));
+  }
+
+  // Reports
+  async getSalesReport(date?: string): Promise<Array<{
+    date: string;
+    orderId: string;
+    tableId: number;
+    items: Array<{ name: string; quantity: number }>;
+    total: number;
+    waiterName: string;
+  }>> {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    const startOfDay = new Date(targetDate + 'T00:00:00.000Z');
+    const endOfDay = new Date(targetDate + 'T23:59:59.999Z');
+
+    // Get all orders for the specified date with their items and waiter info
+    const ordersData = await db
+      .select({
+        orderId: orders.id,
+        tableNumber: orders.tableNumber,
+        createdAt: orders.createdAt,
+        waiterId: orders.waiterId,
+        waiterFirstName: users.firstName,
+        waiterLastName: users.lastName,
+        waiterEmail: users.email,
+      })
+      .from(orders)
+      .leftJoin(users, eq(orders.waiterId, users.id))
+      .where(and(
+        gte(orders.createdAt, startOfDay),
+        lt(orders.createdAt, endOfDay)
+      ));
+
+    const salesReport = [];
+
+    for (const order of ordersData) {
+      // Get order items for this order
+      const orderItemsData = await db
+        .select({
+          quantity: orderItems.quantity,
+          menuItemName: menuItems.name,
+          menuItemPrice: menuItems.price,
+        })
+        .from(orderItems)
+        .leftJoin(menuItems, eq(orderItems.menuItemId, menuItems.id))
+        .where(eq(orderItems.orderId, order.orderId));
+
+      const items = orderItemsData.map(item => ({
+        name: item.menuItemName || 'Unknown Item',
+        quantity: item.quantity
+      }));
+
+      const total = orderItemsData.reduce((sum, item) => 
+        sum + ((item.menuItemPrice || 0) * item.quantity), 0
+      );
+
+      const waiterName = order.waiterFirstName && order.waiterLastName 
+        ? `${order.waiterFirstName} ${order.waiterLastName}`
+        : order.waiterEmail || 'Unknown Waiter';
+
+      salesReport.push({
+        date: order.createdAt?.toISOString().split('T')[0] || targetDate,
+        orderId: order.orderId,
+        tableId: order.tableNumber,
+        items,
+        total,
+        waiterName
+      });
+    }
+
+    return salesReport;
+  }
+
+  async getStaffPerformanceReport(date?: string): Promise<Array<{
+    username: string;
+    totalSales: number;
+    date: string;
+  }>> {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    const startOfDay = new Date(targetDate + 'T00:00:00.000Z');
+    const endOfDay = new Date(targetDate + 'T23:59:59.999Z');
+
+    // Get all waiters who took orders on the specified date
+    const waiterSales = await db
+      .select({
+        waiterId: orders.waiterId,
+        waiterFirstName: users.firstName,
+        waiterLastName: users.lastName,
+        waiterEmail: users.email,
+      })
+      .from(orders)
+      .leftJoin(users, eq(orders.waiterId, users.id))
+      .where(and(
+        gte(orders.createdAt, startOfDay),
+        lt(orders.createdAt, endOfDay)
+      ));
+
+    const staffPerformance = new Map<string, { username: string; totalSales: number }>();
+
+    for (const sale of waiterSales) {
+      if (!sale.waiterId) continue;
+
+      const username = sale.waiterFirstName && sale.waiterLastName 
+        ? `${sale.waiterFirstName}.${sale.waiterLastName}`.toLowerCase().replace(/\s+/g, '.')
+        : sale.waiterEmail || `waiter.${sale.waiterId}`;
+
+      // Get total sales for this waiter on this date
+      const waiterOrders = await db
+        .select({
+          orderId: orders.id,
+        })
+        .from(orders)
+        .where(and(
+          eq(orders.waiterId, sale.waiterId),
+          gte(orders.createdAt, startOfDay),
+          lt(orders.createdAt, endOfDay)
+        ));
+
+      let totalSales = 0;
+      for (const order of waiterOrders) {
+        const orderItemsData = await db
+          .select({
+            quantity: orderItems.quantity,
+            menuItemPrice: menuItems.price,
+          })
+          .from(orderItems)
+          .leftJoin(menuItems, eq(orderItems.menuItemId, menuItems.id))
+          .where(eq(orderItems.orderId, order.orderId));
+
+        const orderTotal = orderItemsData.reduce((sum, item) => 
+          sum + ((item.menuItemPrice || 0) * item.quantity), 0
+        );
+        totalSales += orderTotal;
+      }
+
+      if (staffPerformance.has(username)) {
+        staffPerformance.get(username)!.totalSales += totalSales;
+      } else {
+        staffPerformance.set(username, { username, totalSales });
+      }
+    }
+
+    return Array.from(staffPerformance.values()).map(staff => ({
+      ...staff,
+      date: targetDate
+    }));
   }
 }
 

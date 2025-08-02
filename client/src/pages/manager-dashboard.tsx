@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User, Download, TrendingUp, Clock, DollarSign, Settings, Receipt, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { BarChart3, Users, Table, Menu, LogOut, Plus, Edit, Trash2, User, Download, TrendingUp, Clock, DollarSign, Settings, Receipt, Check, ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import { AddStaffModal } from "@/components/AddStaffModal";
 import { AddTableModal } from "@/components/AddTableModal";
 import { BatchTableModal } from "@/components/BatchTableModal";
@@ -592,12 +592,12 @@ export default function ManagerDashboard() {
               {!sidebarCollapsed && "Overview"}
             </Button>
             <Button
-              variant={activeView === "reports" ? "default" : "ghost"}
+              variant="ghost"
               className={`w-full ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
-              onClick={() => setActiveView("reports")}
+              onClick={() => window.location.href = '/reports'}
               title={sidebarCollapsed ? "Reports" : ""}
             >
-              <Download className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              <FileText className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
               {!sidebarCollapsed && "Reports"}
             </Button>
             <Button
@@ -626,6 +626,15 @@ export default function ManagerDashboard() {
             >
               <Table className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
               {!sidebarCollapsed && "Table Assignment"}
+            </Button>
+            <Button
+              variant="ghost"
+              className={`w-full ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
+              onClick={() => window.location.href = '/menu-management'}
+              title={sidebarCollapsed ? "Menu Management" : ""}
+            >
+              <Receipt className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              {!sidebarCollapsed && "Menu Management"}
             </Button>
             <Button
               variant={activeView === "profile" ? "default" : "ghost"}
@@ -762,10 +771,10 @@ export default function ManagerDashboard() {
                     <div className="space-y-3">
                       <Button 
                         className="w-full justify-start bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => setActiveView('reports')}
+                        onClick={() => window.location.href = '/reports'}
                       >
-                        <Download className="mr-2 h-4 w-4" />
-                        Download Today's Report
+                        <FileText className="mr-2 h-4 w-4" />
+                        View Reports
                       </Button>
                       <Button 
                         variant="outline" 

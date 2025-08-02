@@ -12,6 +12,7 @@ import WaiterDashboard from "@/pages/waiter-dashboard";
 import CashierDashboard from "@/pages/cashier-dashboard";
 import ManagerDashboard from "@/pages/manager-dashboard";
 import MenuManagement from "@/pages/menu-management";
+import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,8 +24,8 @@ function Router() {
     if (user?.role && isAuthenticated) {
       const expectedPath = `/${user.role}`;
       
-      // Allow managers to access menu-management page
-      const allowedPaths = user.role === 'manager' ? [expectedPath, '/menu-management'] : [expectedPath];
+      // Allow managers to access menu-management and reports pages
+      const allowedPaths = user.role === 'manager' ? [expectedPath, '/menu-management', '/reports'] : [expectedPath];
       
       if (!allowedPaths.includes(location)) {
         setLocation(expectedPath);
@@ -67,6 +68,10 @@ function Router() {
       
       <Route path="/menu-management">
         <MenuManagement />
+      </Route>
+      
+      <Route path="/reports">
+        <Reports />
       </Route>
       
       <Route path="/">
