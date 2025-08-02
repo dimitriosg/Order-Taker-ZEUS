@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,14 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileText, Users, Download, Calendar, Package, Archive } from "lucide-react";
+import { FileText, Users, Download, Calendar, Package, Archive, Sun, Moon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface SalesReportItem {
   date: string;
   orderId: string;
   tableId: number;
-  items: Array<{ name: string; quantity: number }>;
+  items: any[];
   total: number;
   waiterName: string;
 }
@@ -36,6 +36,24 @@ export default function Reports() {
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [isDateRange, setIsDateRange] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  // Initialize theme on component mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    
+    setIsDark(shouldBeDark);
+    document.documentElement.classList.toggle('dark', shouldBeDark);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = !isDark;
+    setIsDark(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', newTheme);
+  };
 
   const buildQueryParams = () => {
     const params = new URLSearchParams();
@@ -80,8 +98,18 @@ export default function Reports() {
     refetchStaff();
   };
 
-  const formatItemsList = (items: Array<{ name: string; quantity: number }>) => {
-    return items.map(item => `${item.quantity} ${item.name}`).join(', ');
+  const formatItemsList = (items: any[]) => {
+    if (!Array.isArray(items) || items.length === 0) return 'No items';
+    
+    return items.map(item => {
+      if (typeof item === 'object' && item !== null) {
+        // Handle different possible object structures
+        const name = item.name || item.itemName || item.menuItemName || 'Unknown Item';
+        const quantity = item.quantity || item.qty || 1;
+        return `${quantity} ${name}`;
+      }
+      return String(item);
+    }).join(', ');
   };
 
   const formatDate = (dateStr: string) => {
@@ -107,13 +135,17 @@ export default function Reports() {
           return `"${formatItemsList(row.items)}"`;
         }
         const value = row[header.toLowerCase().replace(' ', '')] || '';
-        // Remove Euro symbols and ensure proper UTF-8 encoding
-        const cleanValue = typeof value === 'string' ? value.replace(/€/g, '') : value;
+        // Remove Euro symbols and clean encoding issues
+        let cleanValue = typeof value === 'string' ? value.replace(/€/g, '').replace(/â‚¬/g, '') : value;
         return `"${cleanValue}"`;
       }).join(','))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    // Add BOM for proper UTF-8 encoding in Excel and other programs
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + csvContent;
+    
+    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -168,12 +200,24 @@ export default function Reports() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-200">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports</h1>
-          <p className="text-gray-600">Sales and staff performance analytics</p>
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Reports</h1>
+              <p className="text-gray-600 dark:text-gray-400">Sales and staff performance analytics</p>
+            </div>
+            <Button
+              onClick={toggleTheme}
+              variant="outline"
+              size="sm"
+              className="h-9 w-9 p-0 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
 
         {/* Date Selector */}
@@ -302,7 +346,10 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 {salesLoading ? (
-                  <div className="text-center py-8">Loading sales report...</div>
+                  <div className="text-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-blue-600" />
+                    <p className="text-gray-600 dark:text-gray-400">Loading sales data...</p>
+                  </div>
                 ) : !salesData || salesData.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     No sales data found for {getDateRangeText()}
@@ -360,7 +407,10 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 {itemsLoading ? (
-                  <div className="text-center py-8">Loading items sales report...</div>
+                  <div className="text-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-blue-600" />
+                    <p className="text-gray-600 dark:text-gray-400">Loading items data...</p>
+                  </div>
                 ) : !itemsData || itemsData.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     No items sales data found for {getDateRangeText()}
@@ -410,7 +460,10 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 {staffLoading ? (
-                  <div className="text-center py-8">Loading staff performance report...</div>
+                  <div className="text-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-blue-600" />
+                    <p className="text-gray-600 dark:text-gray-400">Loading staff data...</p>
+                  </div>
                 ) : !staffData || staffData.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     No staff performance data found for {getDateRangeText()}
