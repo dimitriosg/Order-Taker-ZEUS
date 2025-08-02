@@ -825,155 +825,19 @@ export default function ManagerDashboard() {
           )}
 
           {activeView === "reports" && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Reports & Analytics</h2>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Daily Sales Report</h3>
-                      <Download className="text-gray-400 w-5 h-5" />
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">Export today's sales data including orders, revenue, and payment details.</p>
-                    <Button 
-                      className="w-full bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => downloadCSV([
-                        {
-                          Date: new Date().toLocaleDateString(),
-                          'Total Revenue': `${currencySymbols[currency as keyof typeof currencySymbols]}${todayStats.revenue}`,
-                          'Orders Completed': todayStats.ordersCompleted,
-                          'Active Tables': todayStats.activeTables,
-                          'Staff Count': todayStats.activeStaff,
-                          'Avg Order Time': `${todayStats.avgOrderTime} min`,
-                          'Peak Hour': todayStats.peakHour
-                        }
-                      ], 'daily_sales_report')}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download CSV
-                    </Button>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Staff Performance</h3>
-                      <Download className="text-gray-400 w-5 h-5" />
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">Export staff performance metrics and table assignments.</p>
-                    <Button 
-                      className="w-full bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => downloadCSV(
-                        staff.map(member => ({
-                          Email: member.email,
-                          'Display Name': member.firstName || 'Not set',
-                          Role: member.role,
-                          'Assigned Tables': member.assignedTables?.join(', ') || 'All Tables',
-                          Status: 'Active',
-                          'Created Date': new Date(member.createdAt || Date.now()).toLocaleDateString()
-                        })), 
-                        'staff_performance_report'
-                      )}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download CSV
-                    </Button>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Table Utilization</h3>
-                      <Download className="text-gray-400 w-5 h-5" />
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">Export table usage statistics and occupancy rates.</p>
-                    <Button 
-                      className="w-full bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => downloadCSV(
-                        tables.map(table => ({
-                          'Table Number': table.number,
-                          Status: table.status,
-                          'Current Occupancy': table.status === 'occupied' ? 'Yes' : 'No'
-                        })), 
-                        'table_utilization_report'
-                      )}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download CSV
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <Card className="mb-8">
-                <div className="p-6 border-b border-gray-200">
-                  <h3 className="text-xl font-bold text-gray-900">Export All Data</h3>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Complete Business Report</h4>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Export a comprehensive report including all sales, staff, and table data for business analysis.
-                      </p>
-                      <Button 
-                        className="bg-blue-600 hover:bg-blue-700"
-                        onClick={() => {
-                          const businessData = [
-                            {
-                              'Report Type': 'Business Overview',
-                              'Generated Date': new Date().toLocaleDateString(),
-                              'Total Tables': tables.length,
-                              'Active Tables': todayStats.activeTables,
-                              'Total Staff': staff.length,
-                              'Total Revenue': `${currencySymbols[currency as keyof typeof currencySymbols]}${todayStats.revenue}`,
-                              'Orders Completed': todayStats.ordersCompleted,
-                              'Peak Hour': todayStats.peakHour,
-                              'Avg Order Time': `${todayStats.avgOrderTime} min`
-                            }
-                          ];
-                          downloadCSV(businessData, 'complete_business_report');
-                        }}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Export Business Data
-                      </Button>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">System Status Report</h4>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Export system configuration and operational status for technical analysis.
-                      </p>
-                      <Button 
-                        variant="outline"
-                        onClick={() => {
-                          const systemData = [
-                            {
-                              'System Status': 'Operational',
-                              'Database Status': 'Connected',
-                              'Active Sessions': staff.length,
-                              'Total Tables Configured': tables.length,
-                              'Currency Setting': currency,
-                              'Global Table Access': globalTables ? 'Enabled' : 'Disabled',
-                              'Export Date': new Date().toISOString()
-                            }
-                          ];
-                          downloadCSV(systemData, 'system_status_report');
-                        }}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Export System Status
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-              
+            <div className="text-center py-12">
+              <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Reports have moved!</h3>
+              <p className="text-gray-600 mb-6">
+                The comprehensive reporting system is now available on a dedicated page with enhanced features.
+              </p>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => window.location.href = '/reports'}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Go to Reports Page
+              </Button>
             </div>
           )}
 
