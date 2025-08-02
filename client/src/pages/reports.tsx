@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { FileText, Users, Download, Calendar, Package, Archive, Sun, Moon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import JSZip from "jszip";
 
 interface SalesReportItem {
   date: string;
@@ -158,14 +159,16 @@ export default function Reports() {
   const exportSalesReport = () => {
     if (!salesData) return;
     const headers = ['Date', 'Order ID', 'Table ID', 'Items', 'Total', 'Waiter'];
-    const exportData = salesData.map(item => ({
-      date: formatDate(item.date),
-      orderid: item.orderId,
-      tableid: item.tableId,
-      items: formatItemsList(item.items), // Format items properly for CSV
-      total: item.total.toFixed(2),
-      waiter: item.waiterName
-    }));
+    const exportData = salesData
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(item => ({
+        date: formatDate(item.date),
+        orderid: item.orderId,
+        tableid: item.tableId,
+        items: formatItemsList(item.items), // Format items properly for CSV
+        total: item.total.toFixed(2),
+        waiter: item.waiterName
+      }));
     const filename = `sales-report-${isDateRange ? `${startDate}_to_${endDate}` : startDate}`;
     exportToCSV(exportData, filename, headers);
   };
@@ -173,11 +176,13 @@ export default function Reports() {
   const exportItemsReport = () => {
     if (!itemsData) return;
     const headers = ['Item Name', 'Total Quantity', 'Total Revenue'];
-    const exportData = itemsData.map(item => ({
-      itemname: item.itemName,
-      totalquantity: item.totalQuantity,
-      totalrevenue: item.totalRevenue.toFixed(2)
-    }));
+    const exportData = itemsData
+      .sort((a, b) => b.totalQuantity - a.totalQuantity)
+      .map(item => ({
+        itemname: item.itemName,
+        totalquantity: item.totalQuantity,
+        totalrevenue: item.totalRevenue.toFixed(2)
+      }));
     const filename = `items-sales-report-${isDateRange ? `${startDate}_to_${endDate}` : startDate}`;
     exportToCSV(exportData, filename, headers);
   };
@@ -185,19 +190,88 @@ export default function Reports() {
   const exportStaffReport = () => {
     if (!staffData) return;
     const headers = ['Username', 'Total Sales', 'Date Range'];
-    const exportData = staffData.map(item => ({
-      username: item.username,
-      totalsales: item.totalSales.toFixed(2),
-      daterange: item.dateRange
-    }));
+    const exportData = staffData
+      .sort((a, b) => b.totalSales - a.totalSales)
+      .map(item => ({
+        username: item.username,
+        totalsales: item.totalSales.toFixed(2),
+        daterange: item.dateRange
+      }));
     const filename = `staff-performance-report-${isDateRange ? `${startDate}_to_${endDate}` : startDate}`;
     exportToCSV(exportData, filename, headers);
   };
 
-  const exportAllReports = () => {
-    exportSalesReport();
-    exportItemsReport();
-    exportStaffReport();
+  const exportAllReports = async () => {
+    if (!salesData || !itemsData || !staffData) return;
+
+    const zip = new JSZip();
+
+    // Prepare all report data with sorting
+    const salesHeaders = ['Date', 'Order ID', 'Table ID', 'Items', 'Total', 'Waiter'];
+    const salesExportData = salesData
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(item => ({
+        date: formatDate(item.date),
+        orderid: item.orderId,
+        tableid: item.tableId,
+        items: formatItemsList(item.items),
+        total: item.total.toFixed(2),
+        waiter: item.waiterName
+      }));
+
+    const itemsHeaders = ['Item Name', 'Total Quantity', 'Total Revenue'];
+    const itemsExportData = itemsData
+      .sort((a, b) => b.totalQuantity - a.totalQuantity)
+      .map(item => ({
+        itemname: item.itemName,
+        totalquantity: item.totalQuantity,
+        totalrevenue: item.totalRevenue.toFixed(2)
+      }));
+
+    const staffHeaders = ['Username', 'Total Sales', 'Date Range'];
+    const staffExportData = staffData
+      .sort((a, b) => b.totalSales - a.totalSales)
+      .map(item => ({
+        username: item.username,
+        totalsales: item.totalSales.toFixed(2),
+        daterange: item.dateRange
+      }));
+
+    // Helper function to create CSV content with BOM
+    const createCSV = (data: any[], headers: string[]) => {
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => {
+          const value = row[header.toLowerCase().replace(' ', '').replace('&', '')] || '';
+          const cleanValue = typeof value === 'string' ? value.replace(/€/g, '').replace(/â‚¬/g, '') : value;
+          return `"${cleanValue}"`;
+        }).join(','))
+      ].join('\n');
+      return '\uFEFF' + csvContent; // Add BOM for UTF-8
+    };
+
+    // Add files to ZIP
+    const dateRangeStr = isDateRange ? `${startDate}_to_${endDate}` : startDate;
+    zip.file(`sales-report-${dateRangeStr}.csv`, createCSV(salesExportData, salesHeaders));
+    zip.file(`items-sales-report-${dateRangeStr}.csv`, createCSV(itemsExportData, itemsHeaders));
+    zip.file(`staff-performance-report-${dateRangeStr}.csv`, createCSV(staffExportData, staffHeaders));
+
+    // Generate and download ZIP
+    try {
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = window.URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `all-reports-${dateRangeStr}.zip`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error creating ZIP file:', error);
+      // Fallback to individual downloads
+      exportSalesReport();
+      exportItemsReport();
+      exportStaffReport();
+    }
   };
 
   return (
@@ -369,7 +443,9 @@ export default function Reports() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {salesData.map((sale) => (
+                        {salesData
+                          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                          .map((sale) => (
                           <TableRow key={sale.orderId}>
                             <TableCell>{formatDate(sale.date)}</TableCell>
                             <TableCell className="font-mono">{sale.orderId}</TableCell>
@@ -427,7 +503,9 @@ export default function Reports() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {itemsData.map((item, index) => (
+                        {itemsData
+                          .sort((a, b) => b.totalQuantity - a.totalQuantity)
+                          .map((item, index) => (
                           <TableRow key={index}>
                             <TableCell className="font-medium">{item.itemName}</TableCell>
                             <TableCell>{item.totalQuantity}</TableCell>
