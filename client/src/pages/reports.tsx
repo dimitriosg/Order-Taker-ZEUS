@@ -106,11 +106,14 @@ export default function Reports() {
         if (header === 'items' && Array.isArray(row.items)) {
           return `"${formatItemsList(row.items)}"`;
         }
-        return `"${row[header.toLowerCase().replace(' ', '')] || ''}"`;
+        const value = row[header.toLowerCase().replace(' ', '')] || '';
+        // Remove Euro symbols and ensure proper UTF-8 encoding
+        const cleanValue = typeof value === 'string' ? value.replace(/€/g, '') : value;
+        return `"${cleanValue}"`;
       }).join(','))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -127,7 +130,7 @@ export default function Reports() {
       orderid: item.orderId,
       tableid: item.tableId,
       items: item.items,
-      total: `€${item.total.toFixed(2)}`,
+      total: item.total.toFixed(2),
       waiter: item.waiterName
     }));
     const filename = `sales-report-${isDateRange ? `${startDate}_to_${endDate}` : startDate}`;
@@ -136,12 +139,11 @@ export default function Reports() {
 
   const exportItemsReport = () => {
     if (!itemsData) return;
-    const headers = ['Item Name', 'Total Quantity', 'Total Revenue', 'Average Price'];
+    const headers = ['Item Name', 'Total Quantity', 'Total Revenue'];
     const exportData = itemsData.map(item => ({
       itemname: item.itemName,
       totalquantity: item.totalQuantity,
-      totalrevenue: `€${item.totalRevenue.toFixed(2)}`,
-      averageprice: `€${item.averagePrice.toFixed(2)}`
+      totalrevenue: item.totalRevenue.toFixed(2)
     }));
     const filename = `items-sales-report-${isDateRange ? `${startDate}_to_${endDate}` : startDate}`;
     exportToCSV(exportData, filename, headers);
@@ -152,7 +154,7 @@ export default function Reports() {
     const headers = ['Username', 'Total Sales', 'Date Range'];
     const exportData = staffData.map(item => ({
       username: item.username,
-      totalsales: `€${item.totalSales.toFixed(2)}`,
+      totalsales: item.totalSales.toFixed(2),
       daterange: item.dateRange
     }));
     const filename = `staff-performance-report-${isDateRange ? `${startDate}_to_${endDate}` : startDate}`;
@@ -327,7 +329,7 @@ export default function Reports() {
                             <TableCell className="max-w-xs">
                               {formatItemsList(sale.items)}
                             </TableCell>
-                            <TableCell className="font-semibold">€{sale.total.toFixed(2)}</TableCell>
+                            <TableCell className="font-semibold">{sale.total.toFixed(2)}</TableCell>
                             <TableCell>{sale.waiterName}</TableCell>
                           </TableRow>
                         ))}
@@ -371,7 +373,6 @@ export default function Reports() {
                           <TableHead>Item Name</TableHead>
                           <TableHead>Total Quantity Sold</TableHead>
                           <TableHead>Total Revenue</TableHead>
-                          <TableHead>Average Price</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -379,8 +380,7 @@ export default function Reports() {
                           <TableRow key={index}>
                             <TableCell className="font-medium">{item.itemName}</TableCell>
                             <TableCell>{item.totalQuantity}</TableCell>
-                            <TableCell className="font-semibold">€{item.totalRevenue.toFixed(2)}</TableCell>
-                            <TableCell>€{item.averagePrice.toFixed(2)}</TableCell>
+                            <TableCell className="font-semibold">{item.totalRevenue.toFixed(2)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -431,7 +431,7 @@ export default function Reports() {
                           .map((staff) => (
                           <TableRow key={staff.username}>
                             <TableCell className="font-medium">{staff.username}</TableCell>
-                            <TableCell className="font-semibold">€{staff.totalSales.toFixed(2)}</TableCell>
+                            <TableCell className="font-semibold">{staff.totalSales.toFixed(2)}</TableCell>
                             <TableCell>{staff.dateRange}</TableCell>
                           </TableRow>
                         ))}
