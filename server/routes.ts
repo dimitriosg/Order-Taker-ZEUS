@@ -810,8 +810,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reports endpoints
   app.get('/api/reports/sales', async (req: any, res) => {
     try {
-      const date = req.query.date as string;
-      const salesReport = await storage.getSalesReport(date);
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      const salesReport = await storage.getSalesReport(startDate, endDate);
       res.json(salesReport);
     } catch (error) {
       console.error('Error generating sales report:', error);
@@ -819,10 +820,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/reports/items-sales', async (req: any, res) => {
+    try {
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      const itemsReport = await storage.getItemsSalesReport(startDate, endDate);
+      res.json(itemsReport);
+    } catch (error) {
+      console.error('Error generating items sales report:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   app.get('/api/reports/staff-performance', async (req: any, res) => {
     try {
-      const date = req.query.date as string;
-      const staffReport = await storage.getStaffPerformanceReport(date);
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      const staffReport = await storage.getStaffPerformanceReport(startDate, endDate);
       res.json(staffReport);
     } catch (error) {
       console.error('Error generating staff performance report:', error);

@@ -68,7 +68,7 @@ export interface IStorage {
   deleteOrderItemsByMenuItemId(menuItemId: string): Promise<void>;
 
   // Reports
-  getSalesReport(date?: string): Promise<Array<{
+  getSalesReport(startDate?: string, endDate?: string): Promise<Array<{
     date: string;
     orderId: string;
     tableId: number;
@@ -76,10 +76,16 @@ export interface IStorage {
     total: number;
     waiterName: string;
   }>>;
-  getStaffPerformanceReport(date?: string): Promise<Array<{
+  getItemsSalesReport(startDate?: string, endDate?: string): Promise<Array<{
+    itemName: string;
+    totalQuantity: number;
+    totalRevenue: number;
+    averagePrice: number;
+  }>>;
+  getStaffPerformanceReport(startDate?: string, endDate?: string): Promise<Array<{
     username: string;
     totalSales: number;
-    date: string;
+    dateRange: string;
   }>>;
 }
 
@@ -425,7 +431,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Reports
-  async getSalesReport(date?: string): Promise<Array<{
+  async getSalesReport(startDate?: string, endDate?: string): Promise<Array<{
     date: string;
     orderId: string;
     tableId: number;
@@ -433,9 +439,11 @@ export class DatabaseStorage implements IStorage {
     total: number;
     waiterName: string;
   }>> {
-    const targetDate = date || new Date().toISOString().split('T')[0];
-    const startOfDay = new Date(targetDate + 'T00:00:00.000Z');
-    const endOfDay = new Date(targetDate + 'T23:59:59.999Z');
+    const defaultDate = new Date().toISOString().split('T')[0];
+    const start = startDate || defaultDate;
+    const end = endDate || defaultDate;
+    const startOfPeriod = new Date(start + 'T00:00:00.000Z');
+    const endOfPeriod = new Date(end + 'T23:59:59.999Z');
 
     // Get all orders for the specified date with their items and waiter info
     const ordersData = await db
@@ -483,7 +491,7 @@ export class DatabaseStorage implements IStorage {
         : order.waiterEmail || 'Unknown Waiter';
 
       salesReport.push({
-        date: order.createdAt?.toISOString().split('T')[0] || targetDate,
+        date: order.createdAt?.toISOString().split('T')[0] || start,
         orderId: order.orderId,
         tableId: order.tableNumber,
         items,
@@ -495,14 +503,74 @@ export class DatabaseStorage implements IStorage {
     return salesReport;
   }
 
-  async getStaffPerformanceReport(date?: string): Promise<Array<{
+  async getItemsSalesReport(startDate?: string, endDate?: string): Promise<Array<{
+    itemName: string;
+    totalQuantity: number;
+    totalRevenue: number;
+    averagePrice: number;
+  }>> {
+    const defaultDate = new Date().toISOString().split('T')[0];
+    const start = startDate || defaultDate;
+    const end = endDate || defaultDate;
+    const startOfPeriod = new Date(start + 'T00:00:00.000Z');
+    const endOfPeriod = new Date(end + 'T23:59:59.999Z');
+
+    // Get all order items within the date range
+    const itemsData = await db
+      .select({
+        menuItemName: menuItems.name,
+        menuItemPrice: menuItems.price,
+        quantity: orderItems.quantity,
+      })
+      .from(orderItems)
+      .leftJoin(menuItems, eq(orderItems.menuItemId, menuItems.id))
+      .leftJoin(orders, eq(orderItems.orderId, orders.id))
+      .where(and(
+        gte(orders.createdAt, startOfPeriod),
+        lt(orders.createdAt, endOfPeriod)
+      ));
+
+    // Aggregate data by item
+    const itemsMap = new Map<string, { totalQuantity: number; totalRevenue: number; prices: number[] }>();
+
+    for (const item of itemsData) {
+      const itemName = item.menuItemName || 'Unknown Item';
+      const price = item.menuItemPrice || 0;
+      const quantity = item.quantity;
+      const revenue = price * quantity;
+
+      if (itemsMap.has(itemName)) {
+        const existing = itemsMap.get(itemName)!;
+        existing.totalQuantity += quantity;
+        existing.totalRevenue += revenue;
+        existing.prices.push(price);
+      } else {
+        itemsMap.set(itemName, {
+          totalQuantity: quantity,
+          totalRevenue: revenue,
+          prices: [price]
+        });
+      }
+    }
+
+    return Array.from(itemsMap.entries()).map(([itemName, data]) => ({
+      itemName,
+      totalQuantity: data.totalQuantity,
+      totalRevenue: data.totalRevenue,
+      averagePrice: data.prices.reduce((sum, price) => sum + price, 0) / data.prices.length
+    })).sort((a, b) => b.totalRevenue - a.totalRevenue);
+  }
+
+  async getStaffPerformanceReport(startDate?: string, endDate?: string): Promise<Array<{
     username: string;
     totalSales: number;
-    date: string;
+    dateRange: string;
   }>> {
-    const targetDate = date || new Date().toISOString().split('T')[0];
-    const startOfDay = new Date(targetDate + 'T00:00:00.000Z');
-    const endOfDay = new Date(targetDate + 'T23:59:59.999Z');
+    const defaultDate = new Date().toISOString().split('T')[0];
+    const start = startDate || defaultDate;
+    const end = endDate || defaultDate;
+    const startOfPeriod = new Date(start + 'T00:00:00.000Z');
+    const endOfPeriod = new Date(end + 'T23:59:59.999Z');
 
     // Get all waiters who took orders on the specified date
     const waiterSales = await db
@@ -536,8 +604,8 @@ export class DatabaseStorage implements IStorage {
         .from(orders)
         .where(and(
           eq(orders.waiterId, sale.waiterId),
-          gte(orders.createdAt, startOfDay),
-          lt(orders.createdAt, endOfDay)
+          gte(orders.createdAt, startOfPeriod),
+          lt(orders.createdAt, endOfPeriod)
         ));
 
       let totalSales = 0;
@@ -564,9 +632,10 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
+    const dateRange = start === end ? start : `${start} to ${end}`;
     return Array.from(staffPerformance.values()).map(staff => ({
       ...staff,
-      date: targetDate
+      dateRange
     }));
   }
 }
