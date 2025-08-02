@@ -101,13 +101,20 @@ export default function Reports() {
   const formatItemsList = (items: any[]) => {
     if (!Array.isArray(items) || items.length === 0) return 'No items';
     
+    // Debug logging to see what we're receiving
+    console.log('formatItemsList received:', items);
+    
     return items.map(item => {
       if (typeof item === 'object' && item !== null) {
-        // Handle different possible object structures
+        // Log each item to understand the structure
+        console.log('Processing item:', item);
+        
+        // Handle different possible object structures based on backend data
         const name = item.name || item.itemName || item.menuItemName || 'Unknown Item';
         const quantity = item.quantity || item.qty || 1;
-        return `${quantity} ${name}`;
+        return `${quantity}x ${name}`;
       }
+      // If it's not an object, convert to string
       return String(item);
     }).join(', ');
   };
